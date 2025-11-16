@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AI Smart Room Allocation</title>
+  <style>
+    :root {
+      --blue: #2f6fed;
+      --green: #28a745;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #0d1b3d;
+      --text-light: #555;
+    }
+    body{
+      font-family: Poppins, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap{
+      max-width: 1600px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      background: var(--blue);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      transition: background 0.2s ease;
+    }
+    .btn:hover { background: #1e55c4; }
+    .btn-green { background: var(--green); }
+    .btn-green:hover { background: #218838; }
+    .btn-red { background: var(--red); }
+    .btn-red:hover { background: #dc2626; }
+    /* NEW: Small button style */
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .btn-view {
+      background-color: #6c757d;
+    }
+    .btn-view:hover {
+      background-color: #5a6268;
+    }
+
+
+    /* --- Main 3-Column Grid --- */
+    .allocation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.5fr;
+      gap: 20px;
+    }
+    .grid-col {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+      padding: 20px;
+      min-height: 75vh;
+      max-height: 75vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .col-header {
+      flex-shrink: 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+    .col-header h3 {
+      margin: 0 0 5px 0;
+    }
+    .col-header p {
+      font-size: 13px;
+      color: var(--text-light);
+      margin: 0;
+    }
+    .col-content {
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    
+    /* --- Column 1: Room List (UPDATED) --- */
+    .room-card {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .room-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .room-card-header h4 {
+      margin: 0;
+    }
+    .room-card-header span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-light);
+    }
+    .room-card-delete {
+      font-size: 18px;
+      color: #aaa;
+      cursor: pointer;
+    }
+    .room-card-delete:hover { color: var(--red); }
+    /* NEW: Styles for card body/footer */
+    .room-card-body {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-top: 5px;
+    }
+    .room-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .capacity-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .capacity-full {
+      color: var(--red);
+      font-weight: 700;
+      margin-left: 5px;
+    }
+
+    /* --- Column 2: Student List --- */
+    .student-card {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .student-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .student-card-header h4 { margin: 0; }
+    .student-card-header button {
+      padding: 4px 8px;
+      font-size: 12px;
+      background: #eee;
+      color: var(--text);
+    }
+    .student-card p {
+      font-size: 13px;
+      margin: 5px 0 0 0;
+      color: var(--text-light);
+    }
+
+    /* --- Column 3: Results --- */
+    #runAllocationBtn {
+      width: 100%;
+      padding: 20px;
+      font-size: 20px;
+    }
+    .status-message {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 18px;
+      color: var(--text-light);
+    }
+    .room-result-card {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .room-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+    .room-result-header h4 { margin: 0; }
+    .room-result-header .capacity {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .student-in-room {
+      display: block;
+      padding: 5px;
+      font-size: 14px;
+    }
+    .unassigned-list h4 {
+      color: var(--red);
+    }
+    #saveBtnContainer {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    #saveAllocationsBtn {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+    }
+
+    /* --- Modal Styles --- */
+    .modal-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: 300;
+      color: #888;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #000; }
+    .modal-content h3 { margin-top: 0; margin-bottom: 15px; }
+    .modal-content label {
+      font-size: 14px;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .modal-content input, .modal-content select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #d6ddea;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .modal-content .btn { width: 100%; }
+
+    /* --- NEW: View Room Modal --- */
+    #viewRoomOccupantsList {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .occupant-item {
+      font-size: 15px;
+      color: var(--text);
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .occupant-item:last-child {
+      border-bottom: none;
+    }
+    .occupant-item-empty {
+      font-size: 14px;
+      color: var(--text-light);
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <h2>🧠 AI Smart Room Allocation</h2>
+    <a href="features.html" style="text-decoration: none; color: var(--blue); font-weight: 500;">&larr; Back to Features</a>
+  </div>
+
+  <div class="allocation-grid">
+    
+    <!-- === COLUMN 1: ROOM INVENTORY === -->
+    <div class="grid-col">
+      <div class="col-header">
+        <h3>🛏️ Hostel Inventory</h3>
+        <p>Define your hostel's complete room inventory.</p>
+        <button class="btn" style="width: 100%; margin-top: 10px;" onclick="openAddRoomModal()">+ Add New Room</button>
+      </div>
+      <div class="col-content" id="roomList">
+        <!-- Room cards will be loaded here -->
+      </div>
+    </div>
+
+    <!-- === COLUMN 2: UNASSIGNED STUDENTS === -->
+    <div class="grid-col">
+      <div class="col-header">
+        <h3>👨‍🎓 Unassigned Students</h3>
+        <p>Students from User Management awaiting rooms.</p>
+        <button class="btn" style="width: 100%; margin-top: 10px;" onclick="loadUnassignedStudents()">Load/Refresh Unassigned Students</button>
+      </div>
+      <div class="col-content" id="studentList">
+        <p class="status-message" id="studentStatus">Click "Load" to see students.</p>
+        <!-- Student cards will be loaded here -->
+      </div>
+    </div>
+
+    <!-- === COLUMN 3: ALLOCATION & RESULTS === -->
+    <div class="grid-col">
+      <div class="col-header">
+        <h3>⚙️ Run Allocation</h3>
+        <p>Review the AI-powered assignments and save.</p>
+      </div>
+      <div class="col-content" id="resultsPanel">
+        <button class="btn btn-green" id="runAllocationBtn" onclick="runAllocation()">Run Allocation Engine</button>
+        <div id="resultsContainer" style="display: none;">
+          <!-- Result cards will appear here -->
+        </div>
+        <div id="saveBtnContainer" style="display: none;">
+          <button class="btn btn-green" id="saveAllocationsBtn" onclick="saveAllocations()">Save All Allocations</button>
+          <button class="btn btn-red" style="width: 100%; margin-top: 10px;" onclick="resetAllocation()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal 1: Add New Room -->
+<div id="addRoomModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeAddRoomModal()">×</span>
+    <h3>Add New Room</h3>
+    <form id="addRoomForm">
+      <label for="roomId">Room ID (e.g., A-101)</label>
+      <input id="roomId" type="text" placeholder="A-101" required>
+      
+      <label for="roomHostel">Hostel</label>
+      <select id="roomHostel" required>
+        <option value="">-- Select Hostel --</option>
+        <option value="Boys">Boys' Hostel</option>
+        <option value="Girls">Girls' Hostel</option>
+      </select>
+      
+      <label for="roomType">Room Type</label>
+      <select id="roomType" required>
+        <option value="">-- Select Type --</option>
+        <option value="Super Delux">Super Delux (Single)</option>
+        <option value="Delux">Delux (Double)</option>
+        <option value="Standard">Standard (Triple)</option>
+      </select>
+      
+      <button type="submit" class="btn">Save Room</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 2: Set Student Preferences -->
+<div id="setPrefsModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closePrefsModal()">×</span>
+    <h3 id="prefsModalTitle">Set Preferences</h3>
+    <form id="setPrefsForm">
+      <input id="prefsUserId" type="hidden">
+      
+      <label for="prefRoomType">Preferred Room Type</label>
+      <select id="prefRoomType">
+        <option value="">No Preference</option>
+        <option value="Super Delux">Super Delux (Single)</option>
+        <option value="Delux">Delux (Double)</option>
+        <option value="Standard">Standard (Triple)</option>
+      </select>
+
+      <label for="prefAc">AC / Non-AC</label>
+      <select id="prefAc">
+        <option value="">No Preference</option>
+        <option value="AC">AC</option>
+        <option value="Non-AC">Non-AC</option>
+      </select>
+      
+      <button type="submit" class="btn">Set Preferences</button>
+    </form>
+  </div>
+</div>
+
+<!-- 
+  NEW: Modal 3: View Room Occupants
+-->
+<div id="viewRoomModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeViewRoomModal()">×</span>
+    <h3 id="viewRoomTitle">👥 Room Occupants</h3>
+    <div id="viewRoomOccupantsList">
+      <!-- Occupants list will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+// --- ALL LOCALSTORAGE KEYS ---
+const USERS_KEY = "eHostel_users_v1"; 
+const CONTACTS_KEY = "eHostel_contacts_v1"; 
+const ROOMS_KEY = "eHostel_rooms_v1"; 
+const NOTIFICATIONS_KEY = "eHostel_notifications_v1";
+
+// --- Temporary In-Memory State ---
+let unassignedStudents = [];
+let allocationResults = { assignments: {}, unassigned: [] };
+
+// --- LOAD/SAVE FUNCTIONS ---
+function loadUsers(){ return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
+function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+function loadContacts(){ return JSON.parse(localStorage.getItem(CONTACTS_KEY) || "[]"); }
+function saveContacts(c){ localStorage.setItem(CONTACTS_KEY, JSON.stringify(c)); }
+function loadRooms(){ return JSON.parse(localStorage.getItem(ROOMS_KEY) || "[]"); }
+function saveRooms(r){ localStorage.setItem(ROOMS_KEY, JSON.stringify(r)); }
+function loadNotifications(){ return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]"); }
+function saveNotifications(n){ localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(n)); }
+
+
+// ===================================
+// === COLUMN 1: ROOM MANAGEMENT ===
+// ===================================
+
+function openAddRoomModal() {
+  document.getElementById("addRoomModal").style.display = 'flex';
+}
+function closeAddRoomModal() {
+  document.getElementById("addRoomModal").style.display = 'none';
+}
+
+document.getElementById("addRoomForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const rooms = loadRooms();
+  
+  const type = document.getElementById('roomType').value;
+  let capacity = 0;
+  if (type === 'Super Delux') capacity = 1;
+  else if (type === 'Delux') capacity = 2;
+  else if (type === 'Standard') capacity = 3;
+
+  const newRoom = {
+    id: document.getElementById('roomId').value.trim().toUpperCase(),
+    hostel: document.getElementById('roomHostel').value,
+    type: type,
+    capacity: capacity
+  };
+
+  if (rooms.some(r => r.id === newRoom.id)) {
+    console.error("A room with this ID already exists."); 
+    return;
+  }
+
+  rooms.push(newRoom);
+  saveRooms(rooms); 
+  this.reset();
+  closeAddRoomModal();
+  renderRoomList(); 
+});
+
+function deleteRoom(roomId) {
+  let rooms = loadRooms();
+  rooms = rooms.filter(r => r.id !== roomId);
+  saveRooms(rooms);
+  renderRoomList();
+}
+
+/**
+ * [UPDATED] Renders the room list with capacity and view button.
+ */
+function renderRoomList() {
+  const roomListEl = document.getElementById("roomList");
+  const rooms = loadRooms();
+  const allUsers = loadUsers(); 
+  
+  roomListEl.innerHTML = '';
+  if (rooms.length === 0) {
+    roomListEl.innerHTML = '<p class="status-message">No rooms in inventory. <br> Add rooms to begin.</p>';
+    return;
+  }
+
+  rooms.sort((a, b) => a.id.localeCompare(b.id));
+
+  rooms.forEach(room => {
+    const occupants = allUsers.filter(u => u.room === room.id).length;
+    const isFull = occupants >= room.capacity;
+
+    // Build the capacity text
+    let capacityText = `<strong>${occupants} / ${room.capacity}</strong> Occupants`;
+    if (isFull) {
+        capacityText += ` <span class="capacity-full">(Maximum capacity reached)</span>`;
+    }
+
+    roomListEl.innerHTML += `
+      <div class="room-card" style="border-left: 5px solid ${isFull ? 'var(--red)' : 'var(--green)'}">
+        <div class="room-card-header">
+          <h4>${room.id}</h4>
+          <span style="color: ${room.hostel === 'Boys' ? 'var(--blue)' : '#e91e63'}">${room.hostel}</span>
+          <span class="room-card-delete" onclick="deleteRoom('${room.id}')">×</span>
+        </div>
+        <div class="room-card-body">
+          <span>${room.type}</span>
+        </div>
+        <!-- NEW: Footer with capacity and view button -->
+        <div class="room-card-footer">
+          <span class="capacity-text">${capacityText}</span>
+          <button class="btn btn-small btn-view" onclick="viewRoomOccupants('${room.id}')">View</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// ===================================
+// === COLUMN 2: STUDENT MANAGEMENT ===
+// ===================================
+
+function loadUnassignedStudents() {
+  const allUsers = loadUsers();
+  unassignedStudents = allUsers
+    .filter(u => u.status === 'approved' && (!u.room || u.room === ''))
+    .map(u => ({ ...u, prefType: '', prefAc: '' })); 
+
+  renderStudentList();
+}
+
+function renderStudentList() {
+  const studentListEl = document.getElementById("studentList");
+  studentListEl.innerHTML = '';
+
+  if (unassignedStudents.length === 0) {
+    document.getElementById("studentStatus").innerHTML = 'No unassigned students found. <br> Go to User Management to approve new students.';
+    document.getElementById("studentStatus").style.display = 'block';
+    return;
+  }
+  
+  document.getElementById("studentStatus").style.display = 'none';
+
+  unassignedStudents.forEach(student => {
+    let prefText = 'Prefs: None';
+    if (student.prefType || student.prefAc) {
+      prefText = `Prefs: ${student.prefType || 'Any'} | ${student.prefAc || 'Any'}`;
+    }
+
+    studentListEl.innerHTML += `
+      <div class="student-card">
+        <div class="student-card-header">
+          <h4>${student.name}</h4>
+          <button class="btn-small" onclick="openPrefsModal('${student.id}')">Set Prefs</button>
+        </div>
+        <p>${student.email}</p>
+        <p style="color: var(--blue); font-weight: 500;">${prefText}</p>
+      </div>
+    `;
+  });
+}
+
+function openPrefsModal(userId) {
+  const student = unassignedStudents.find(s => s.id == userId);
+  if (!student) return;
+
+  document.getElementById("prefsUserId").value = student.id;
+  document.getElementById("prefsModalTitle").textContent = `Set Preferences for ${student.name}`;
+  document.getElementById("prefRoomType").value = student.prefType;
+  document.getElementById("prefAc").value = student.prefAc;
+  
+  document.getElementById("setPrefsModal").style.display = 'flex';
+}
+
+function closePrefsModal() {
+  document.getElementById("setPrefsModal").style.display = 'none';
+}
+
+document.getElementById("setPrefsForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const userId = document.getElementById("prefsUserId").value;
+  const student = unassignedStudents.find(s => s.id == userId);
+  
+  if (student) {
+    student.prefType = document.getElementById("prefRoomType").value;
+    student.prefAc = document.getElementById("prefAc").value;
+  }
+  
+  closePrefsModal();
+  renderStudentList();
+});
+
+// ===================================
+// === COLUMN 3: ALLOCATION ENGINE ===
+// ===================================
+
+function runAllocation() {
+  loadUnassignedStudents();
+  
+  const rooms = loadRooms();
+  const allUsers = loadUsers();
+  
+  let availableRooms = rooms.map(room => {
+    const occupants = allUsers.filter(u => u.room === room.id).length;
+    return {
+      ...room,
+      assigned: [], 
+      currentOccupancy: occupants
+    };
+  });
+
+  let studentsToAllocate = [...unassignedStudents]; 
+  let unassignedList = [];
+  
+  if (studentsToAllocate.length === 0) {
+    resetAllocation();
+    document.getElementById("resultsContainer").innerHTML = '<p class="status-message">No unassigned students found to allocate.</p>';
+    document.getElementById("resultsContainer").style.display = 'block';
+    return;
+  }
+  
+  studentsToAllocate.sort((a, b) => {
+    if (a.prefType && !b.prefType) return -1;
+    if (!a.prefType && b.prefType) return 1;
+    return 0;
+  });
+
+  studentsToAllocate.forEach(student => {
+    let allocated = false;
+    
+    if (student.prefType) {
+      const preferredRoom = availableRooms.find(room => 
+        room.type === student.prefType &&
+        (room.currentOccupancy + room.assigned.length) < room.capacity
+      );
+      if (preferredRoom) {
+        preferredRoom.assigned.push(student);
+        allocated = true;
+      }
+    }
+
+    if (!allocated) {
+      const anyRoom = availableRooms.find(room => 
+        (room.currentOccupancy + room.assigned.length) < room.capacity
+      );
+      if (anyRoom) {
+        anyRoom.assigned.push(student);
+        allocated = true;
+      }
+    }
+    
+    if (!allocated) {
+      unassignedList.push(student);
+    }
+  });
+
+  allocationResults = {
+    assignments: availableRooms.reduce((acc, room) => {
+      if (room.assigned.length > 0) {
+         acc[room.id] = room.assigned.map(s => s.id);
+      }
+      return acc;
+    }, {}),
+    unassigned: unassignedList
+  };
+
+  renderResults(availableRooms, unassignedList);
+}
+
+function renderResults(allocatedRooms, unassignedList) {
+  const resultsContainer = document.getElementById("resultsContainer");
+  resultsContainer.innerHTML = ''; 
+  
+  document.getElementById("runAllocationBtn").style.display = 'none';
+  
+  let newAssignmentsCount = 0;
+  
+  allocatedRooms
+    .filter(room => room.assigned.length > 0) 
+    .forEach(room => {
+      const filled = room.currentOccupancy + room.assigned.length;
+      newAssignmentsCount += room.assigned.length;
+      const card = document.createElement('div');
+      card.className = 'room-result-card';
+      
+      let studentHtml = room.assigned.map(student => {
+        return `<span class="student-in-room" style="color: var(--blue)">+ ${student.name} (New)</span>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="room-result-header">
+          <h4>${room.id} (${room.type})</h4>
+          <span class="capacity" style="color: ${filled === room.capacity ? 'var(--red)' : 'var(--green)'}">
+            ${filled} / ${room.capacity}
+          </span>
+        </div>
+        ${studentHtml}
+      `;
+      resultsContainer.appendChild(card);
+    });
+  
+  if (newAssignmentsCount === 0) {
+     resultsContainer.innerHTML = '<p class="status-message">No available rooms match the criteria.</p>';
+  }
+
+  if (unassignedList.length > 0) {
+    const unassignedEl = document.createElement('div');
+    unassignedEl.className = 'unassigned-list';
+    let studentHtml = unassignedList.map(student => {
+      return `<span class="student-in-room" style="color: var(--red)">- ${student.name} (Could not be placed)</span>`;
+    }).join('');
+    
+    unassignedEl.innerHTML = `
+      <h4 style="color: var(--red); margin-top: 20px;">Unassigned Students</h4>
+      ${studentHtml}
+    `;
+    resultsContainer.appendChild(unassignedEl);
+  }
+  
+  resultsContainer.style.display = 'block';
+  document.getElementById("saveBtnContainer").style.display = 'block';
+}
+
+function resetAllocation() {
+  allocationResults = { assignments: {}, unassigned: [] };
+  document.getElementById("resultsContainer").style.display = 'none';
+  document.getElementById("saveBtnContainer").style.display = 'none';
+  document.getElementById("runAllocationBtn").style.display = 'block';
+}
+
+function saveAllocations() {
+  const allUsers = loadUsers();
+  const allContacts = loadContacts();
+  
+  let studentsUpdated = 0;
+
+  for (const roomId in allocationResults.assignments) {
+    const studentIdsInRoom = allocationResults.assignments[roomId];
+    
+    studentIdsInRoom.forEach(studentId => {
+      const user = allUsers.find(u => u.id == studentId);
+      if (user) {
+        user.room = roomId;
+        studentsUpdated++;
+      }
+      const contact = allContacts.find(c => c.id == studentId);
+      if (contact) {
+        contact.room = roomId;
+      }
+    });
+  }
+
+  saveUsers(allUsers);
+  saveContacts(allContacts);
+
+  const notifs = loadNotifications();
+  notifs.unshift({
+    id: Date.now(),
+    type: "info",
+    message: `<strong>Allocation Complete:</strong> ${studentsUpdated} students were successfully assigned new rooms.`,
+    timestamp: new Date().toISOString()
+  });
+  saveNotifications(notifs);
+
+  console.log(`Successfully saved ${studentsUpdated} allocations.`);
+  document.getElementById("resultsContainer").innerHTML = '<p class="status-message">✅ Allocations saved successfully! <br> The student list is now updated.</p>';
+  document.getElementById("saveBtnContainer").style.display = 'none';
+  
+  renderRoomList();
+  loadUnassignedStudents();
+}
+
+// ===================================
+// === NEW: VIEW ROOM MODAL FUNCTIONS ===
+// ===================================
+
+function viewRoomOccupants(roomId) {
+  const allUsers = loadUsers();
+  const rooms = loadRooms();
+  
+  const room = rooms.find(r => r.id === roomId);
+  const occupants = allUsers.filter(u => u.room === roomId);
+  
+  document.getElementById("viewRoomTitle").textContent = `👥 Occupants in Room ${room.id}`;
+  const listEl = document.getElementById("viewRoomOccupantsList");
+  listEl.innerHTML = '';
+  
+  if (occupants.length === 0) {
+    listEl.innerHTML = '<p class="occupant-item-empty">This room is currently empty.</p>';
+  } else {
+    occupants.forEach(student => {
+      const item = document.createElement('div');
+      item.className = 'occupant-item';
+      item.textContent = student.name;
+      listEl.appendChild(item);
+    });
+  }
+  
+  document.getElementById("viewRoomModal").style.display = 'flex';
+}
+
+function closeViewRoomModal() {
+  document.getElementById("viewRoomModal").style.display = 'none';
+}
+
+
+// --- INITIAL PAGE LOAD ---
+document.addEventListener("DOMContentLoaded", () => {
+  renderRoomList();
+});
+
+</script>
+</body>
+</html>

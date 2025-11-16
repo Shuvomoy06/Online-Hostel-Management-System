@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Fee Management</title>
+<style>
+  body{font-family:Poppins, sans-serif;margin:0;background:#f6f8fb;color:#0d1b3d}
+  .wrap{max-width:1100px;margin:30px auto;padding:20px}
+  .card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:10px;border-bottom:1px solid #eef2f6;text-align:left}
+  .overdue{color:#c53030;font-weight:700}
+  .paid{color:green;font-weight:700}
+  button{padding:8px 10px;border-radius:8px;border:none;background:#2f6fed;color:white;cursor:pointer; margin-top: 4px; margin-right: 4px;}
+
+  /* --- NEW STYLES for buttons --- */
+  .btn-send {
+    background: #007bff;
+  }
+  .btn-reset {
+    background: #ffc107; /* Amber */
+    color: #333;
+  }
+  .btn-delete {
+    background: #ef4444; /* Red */
+  }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Hostel Fee Management</h2>
+  <div class="card" style="margin-top:12px">
+    <p class="small muted">Mark fees as paid/unpaid and send reminders. Deleting a user here only removes them from the fee list, not from the system.</p>
+
+    <table>
+      <!-- UPDATED: Added new Actions column -->
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Payment Actions</th>
+          <th>Entry Actions</th> <!-- NEW COLUMN -->
+        </tr>
+      </thead>
+      <tbody id="feesTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const USERS_KEY = "eHostel_users_v1"; // same users store
+const FEES_KEY = "eHostel_fees_v1"; // fees list
+
+function loadUsers(){ return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
+function loadFees(){ return JSON.parse(localStorage.getItem(FEES_KEY) || "[]"); }
+function saveFees(f){ localStorage.setItem(FEES_KEY, JSON.stringify(f)); }
+
+/* Seed fees for existing users (if empty) */
+if(loadFees().length === 0){
+  const users = loadUsers();
+  // Only seed from 'approved' users
+  const approvedUsers = users.filter(u => u.status === 'approved');
+  const seed = approvedUsers.map((u,i)=>({
+    id: u.id, 
+    name:u.name, 
+    email:u.email, 
+    amount: (u.roomCost || 90000), // Use cost from user data
+    paid: (u.amountPaid || 0) >= (u.roomCost || 90000)
+  }));
+  saveFees(seed);
+}
+
+/* Render */
+function renderFees(){
+  const tbody = document.getElementById("feesTbody");
+  tbody.innerHTML = "";
+  const fees = loadFees();
+  fees.forEach(f=>{
+    const tr = document.createElement("tr");
+    // --- UPDATED: Added new buttons ---
+    tr.innerHTML = `<td>${f.name}</td>
+      <td>${f.email}</td>
+      <td>₹ ${f.amount}</td>
+      <td>${f.paid ? '<span class="paid">Paid</span>' : '<span class="overdue">Unpaid</span>'}</td>
+      <td>
+         <button onclick="togglePaid(${f.id})">${f.paid ? 'Mark Unpaid' : 'Mark Paid'}</button>
+         <button onclick="sendReminder(${f.id})" class="btn-send">Send Reminder</button>
+      </td>
+      <td>
+         <button onclick="resetFee(${f.id})" class="btn-reset">Reset</button>
+         <button onclick="deleteFeeEntry(${f.id})" class="btn-delete">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Actions */
+function togglePaid(id){
+  const fees = loadFees();
+  const f = fees.find(x=>x.id == id); // Use loose comparison
+  if(f){ 
+    f.paid = !f.paid; 
+    saveFees(fees); 
+    renderFees(); 
+  }
+}
+function sendReminder(id){
+  const fees = loadFees();
+  const f = fees.find(x=>x.id == id);
+  if(!f) return;
+  // in real app you'd send an email/SMS — here we show a console log
+  f.lastReminder = new Date().toISOString();
+  saveFees(fees);
+  console.log(`Reminder sent to ${f.name} (${f.email})`);
+}
+
+// ===================================
+// === NEW FUNCTIONS ADDED HERE ===
+// ===================================
+
+/**
+ * Resets a user's fee status to 'Unpaid'.
+ */
+function resetFee(id) {
+  const fees = loadFees();
+  const f = fees.find(x=>x.id == id); // Use loose comparison
+  if(f){ 
+    f.paid = false; // Set status to unpaid
+    saveFees(fees); 
+    renderFees(); 
+  }
+}
+
+/**
+ * Deletes a user's entry from the fee list ONLY.
+ */
+function deleteFeeEntry(id) {
+  // No confirm() check, as it's not supported
+  let fees = loadFees();
+  fees = fees.filter(f => f.id != id); // Use loose comparison
+  saveFees(fees);
+  renderFees();
+}
+
+/* initial render */
+renderFees();
+</script>
+</body>
+</html>

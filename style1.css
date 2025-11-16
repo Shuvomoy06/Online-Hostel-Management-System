@@ -1,0 +1,174 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: #f4f4f4;
+}
+
+/* HEADER FIXED */
+header {
+    width: 100%;
+    background: #ffffffd8;
+    padding: 15px 60px;
+    position: fixed;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* LOGO */
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0d1b3d;
+}
+
+/* NAVBAR CENTERED & SPACED PERFECTLY */
+.center-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    gap: 45px;
+}
+
+.center-nav a {
+    text-decoration: none;
+    font-size: 17px;
+    color: #0d1b3d;
+    font-weight: 500;
+    transition: .25s;
+}
+
+/* HOVER COLOR */
+.center-nav a:hover,
+.center-nav a:focus,
+.center-nav a:active {
+    color: #2f6fed;
+    transform: translateY(-2px);
+}
+
+/* HERO */
+.hero {
+    height: 70vh;
+    background-image: url('https://images.unsplash.com/photo-1580582932707-520aed937b7b');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+}
+
+.hero-content {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+    width: 80%;
+}
+
+.hero-content h1 {
+    font-size: 48px;
+}
+
+.hero-content p {
+    margin-top: 15px;
+    font-size: 18px;
+}
+
+/* BUTTON */
+.btn-started {
+    padding: 14px 28px;
+    background: #2f6fed;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.btn-started:hover {
+    background: #1e55c4;
+}
+
+/* STATS */
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    margin-top: 40px;
+}
+
+.card {
+    width: 260px;
+    padding: 25px;
+    background: #fff;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.card img {
+    width: 70px;
+}
+
+.card h3 {
+    margin: 10px 0;
+}
+
+.card .number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0d1b3d;
+}
+
+/* WHY CHOOSE US – MADE LONGER */
+.why-choose {
+    padding: 120px 10%;
+    background: #f7f7f7;
+}
+
+.why-choose h2 {
+    text-align: center;
+    font-size: 42px;
+    margin-bottom: 50px;
+}
+
+.choose-container {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 40px;
+}
+
+.choose-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.choose-card h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.choose-card p {
+    font-size: 16px;
+    color: #444;
+    line-height: 1.6;
+}

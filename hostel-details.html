@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostel Rooms</title>
+    <!-- jsPDF library for generating PDF invoices -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* ... (styles are identical, redacted for brevity) ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .section {
+            max-width: 1400px;
+            margin: 0 auto 4rem;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .section-header::before,
+        .section-header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%;
+            height: 1px;
+            background: #333;
+        }
+
+        .section-header::before {
+            left: 0;
+        }
+
+        .section-header::after {
+            right: 0;
+        }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .rooms-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .room-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .room-content {
+            padding: 1.5rem;
+        }
+
+        .room-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+        }
+
+        .room-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .room-price {
+            font-size: 1.5rem;
+            color: #d9534f;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .room-price-note {
+            font-size: 0.85rem;
+            color: #888;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .availability-badge {
+            display: inline-block;
+            background: #0275d8;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .rooms-container {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header::before,
+            .section-header::after {
+                width: 25%;
+            }
+
+            .section-header h2 {
+                font-size: 1.5rem;
+            }
+        }
+        .info-section {
+    width: 85%;
+    margin: 70px auto;
+}
+
+.info-section h2 {
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: #0d1b3d;
+}
+
+.info-box {
+    background: white;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* FOOTER RULES */
+.footer-rules {
+    background: #243444;
+    color: white;
+    padding: 50px 60px;
+}
+
+.footer-rules h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.footer-rules ul {
+    margin-left: 20px;
+    line-height: 1.7;
+}
+
+footer {
+    background: #1b2936;
+    padding: 18px;
+    color: #d5d5d5;
+    text-align: center;
+}
+/* POPUP BACKDROP */
+.room-popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* POPUP CARD */
+.room-popup-content {
+    width: 90%;
+    max-width: 800px;
+    background: #f6f9fc;
+    border-radius: 18px;
+    padding: 20px;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* CLOSE BUTTON */
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 32px;
+    cursor: pointer;
+}
+
+/* TITLE */
+.popup-title {
+    margin: 10px 0 25px;
+    background: #1e3557;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 22px;
+}
+
+/* GRID */
+.popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 25px;
+}
+
+/* Main image column */
+.main-image-col .big-image {
+    height: 250px;
+    background: #e7e7e7;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    overflow: hidden;
+}
+.main-image-col .big-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Small images */
+.left-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+.left-images .img-box {
+    height: 100px;
+    background: #ededed;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    text-align: center;
+    padding: 5px;
+    overflow: hidden;
+}
+.left-images .img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+/* DETAILS */
+.room-details .price {
+    font-size: 27px;
+    margin-top: 10px;
+    color: #d9534f;
+    font-weight: 600;
+}
+
+.book-btn {
+    margin: 12px 0;
+    padding: 12px 18px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+}
+.book-btn:hover {
+    background: #0056b3;
+}
+
+.provided-materials ul,
+.room-details ul {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+#paymentOptionsContainer {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.payment-btn {
+    padding: 12px;
+    background: #f2f2f2;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.payment-btn:hover {
+    background: #e0e0e0;
+}
+
+/* --- PAYMENT SECTION LOGIC --- */
+/* Hide all payment sections by default */
+.payment-section {
+    display: none;
+    margin-top: 20px;
+}
+
+.payment-section input,
+.payment-section select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+/* Style for stacked inputs like in card form */
+.payment-section input + input {
+    margin-top: 8px;
+}
+/* NEW: Error style for invalid inputs */
+.payment-section input:invalid,
+.payment-section select:invalid {
+    border-color: #d9534f;
+}
+
+
+.pay-now {
+    margin-top: 15px;
+    background: #28a745; /* Green */
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+}
+.pay-now:hover {
+    background: #218838;
+}
+
+/* Payment success message */
+#paymentSuccessMessage {
+    text-align: center;
+}
+#paymentSuccessMessage h3 {
+    color: #28a745;
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+#paymentSuccessMessage p {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+#downloadPdfBtn {
+    background: #007bff;
+}
+#downloadPdfBtn:hover {
+    background: #0056b3;
+}
+#closeSuccessBtn {
+    background: #6c757d;
+}
+#closeSuccessBtn:hover {
+    background: #5a6268;
+}
+#paymentSummary {
+    font-size: 16px;
+    margin-bottom: 15px;
+    background: #e9ecef;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+#paymentSummary strong {
+    color: #000;
+}
+    </style>
+</head>
+<body>
+    <!-- ... (HTML content is identical, redacted for brevity) ... -->
+    <!-- Girls Rooms Section -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Girls Rooms</h2>
+        </div>
+        <div class="rooms-container">
+            <div class="room-card" 
+                 data-title="Super Delux Room"
+                 data-subtitle="(one person room)"
+                 data-price="₹ 120000"
+                 data-price-note="~including food (yearly pack)"
+                 data-availability="11"
+                 data-image="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&h=300&fit=crop">
+                
+                <img src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&h=300&fit=crop" alt="Super Delux Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Super Delux Room</h3>
+                    <p class="room-subtitle">(one person room)</p>
+                    <div class="room-price">₹ 120000</div>
+                    <p class="room-price-note">~including food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 11</span>
+                </div>
+            </div>
+
+            <div class="room-card"
+                 data-title="Delux Room"
+                 data-subtitle="(two person room)"
+                 data-price="₹ 90000"
+                 data-price-note="~including food (yearly pack)"
+                 data-availability="30"
+                 data-image="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=500&h=300&fit=crop">
+                
+                <img src="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=500&h=300&fit=crop" alt="Delux Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Delux Room</h3>
+                    <p class="room-subtitle">(two person room)</p>
+                    <div class="room-price">₹ 90000</div>
+                    <p class="room-price-note">~including food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 30</span>
+                </div>
+            </div>
+
+            <div class="room-card"
+                 data-title="Standard Room"
+                 data-subtitle="(three person room)"
+                 data-price="₹ 79900"
+                 data-price-note="~including food (yearly pack)"
+                 data-availability="39"
+                 data-image="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=500&h=300&fit=crop">
+
+                <img src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=500&h=300&fit=crop" alt="Standard Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Standard Room</h3>
+                    <p class="room-subtitle">(three person room)</p>
+                    <div class="room-price">₹ 79900</div>
+                    <p class="room-price-note">~including food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 39</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boys Rooms Section -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Boys Rooms</h2>
+        </div>
+        <div class="rooms-container">
+            <div class="room-card"
+                 data-title="Super Delux Room"
+                 data-subtitle="(one person room)"
+                 data-price="₹ 100000"
+                 data-price-note="~including food (yearly pack)"
+                 data-availability="15"
+                 data-image="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=300&fit=crop">
+
+                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=300&fit=crop" alt="Super Delux Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Super Delux Room</h3>
+                    <p class="room-subtitle">(one person room)</p>
+                    <div class="room-price">₹ 100000</div>
+                    <p class="room-price-note">~including food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 15</span>
+                </div>
+            </div>
+
+            <div class="room-card"
+                 data-title="Delux Room"
+                 data-subtitle="(two person room)"
+                 data-price="₹ 96000"
+                 data-price-note="~including food (yearly pack)"
+                 data-availability="42"
+                 data-image="https://images.unsplash.com/photo-1540518614846-7eded433c457?w=500&h=300&fit=crop">
+
+                <img src="https://images.unsplash.com/photo-1540518614846-7eded433c457?w=500&h=300&fit=crop" alt="Delux Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Delux Room</h3>
+                    <p class="room-subtitle">(two person room)</p>
+                    <div class="room-price">₹ 96000</div>
+                    <p class="room-price-note">~including food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 42</span>
+                </div>
+            </div>
+
+            <div class="room-card"
+                 data-title="Standard Room"
+                 data-subtitle="(three person room)"
+                 data-price="₹ 65000"
+                 data-price-note="~excluding food (yearly pack)"
+                 data-availability="48"
+                 data-image="https://images.unsplash.com/photo-1631049552240-59c37f38802b?w=500&h=300&fit=crop">
+
+                <img src="https://images.unsplash.com/photo-1631049552240-59c37f38802b?w=500&h=300&fit=crop" alt="Standard Room" class="room-image">
+                <div class="room-content">
+                    <h3 class="room-title">Standard Room</h3>
+                    <p class="room-subtitle">(three person room)</p>
+                    <div class="room-price">₹ 65000</div>
+                    <p class="room-price-note">~excluding food (yearly pack)</p>
+                    <span class="availability-badge">Available Room: 48</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FACULTY SECTION -->
+<section class="info-section">
+    <h2>Hostel Faculty</h2>
+    <div class="info-box">
+        <p>• Warden: Mr. Rajesh Sharma<br>
+           • Assistant Warden: Mrs. Priya Sinha<br>
+           • Security Officer: Mr. Arjun Singh<br>
+           • Housekeeping Supervisor: Mrs. Kavita Das
+        </p>
+    </div>
+</section>
+
+<!-- FOOD SECTION -->
+<section class="info-section">
+    <h2>Hostel Food</h2>
+    <div class="info-box">
+        <p>
+            • Breakfast: Poha / Upma / Eggs / Milk / Tea <br>
+            • Lunch: Rice, Dal, Seasonal Veg, Roti, Salad <br>
+            • Dinner: Paneer/Chicken (Alternative Days), Dal, Veg Curry, Roti <br>
+            • Special Sunday Menu Included
+        </p>
+    </div>
+</section>
+
+<!-- FEE STRUCTURE SECTION -->
+<section class="info-section">
+    <h2>Fee Structure</h2>
+    <div class="info-box">
+        <p>
+            • 2-Seater Room: ₹3800 – ₹4200 / month <br>
+            • 3-Seater Room: ₹4200 – ₹4500 / month <br>
+            • 4-Seater Room: ₹4000 – ₹4300 / month<br>
+            • Security Deposit: ₹3000 (Refundable)
+        </p>
+    </div>
+</section>
+
+<!-- HOSTEL RULES FOOTER -->
+<section class="footer-rules">
+    <h2>Hostel Rules</h2>
+    <ul>
+        <li>Entry must be before 10:00 PM.</li>
+        <li>Visitors allowed only in visitor area.</li>
+        <li>No loud music or noise after 9:30 PM.</li>
+        <li>Rooms must be kept clean.</li>
+        <li>Ragging is strictly prohibited.</li>
+        <li>ID card must be shown at entry gate.</li>
+        <li>Any damage to property must be reported.</li>
+    </ul>
+</section>
+
+<footer>
+    © 2025 eHostel Management System. All rights reserved.
+</footer>
+
+    <!-- ... (Popups HTML is identical, redacted for brevity) ... -->
+<!-- ROOM INFO POPUP -->
+<div id="roomInfoPopup" class="room-popup">
+    <div class="room-popup-content">
+        <span class="close-btn" onclick="closeRoomInfo()">×</span>
+
+        <h2 class="popup-title" id="popupRoomTitle">ROOM INFO.</h2>
+
+        <div class="popup-grid">
+
+            <!-- Main Image Column -->
+            <div class="main-image-col">
+                <div class="big-image" id="popupMainImage">
+                    <img src="https://placehold.co/400x250/e7e7e7/333?text=Room+Image" alt="Main room image">
+                </div>
+                <div class="left-images">
+                    <div class="img-box"><img src="https://placehold.co/100x100/ededed/333?text=Bed" alt="Bed"></div>
+                    <div class="img-box"><img src="https://placehold.co/100x100/ededed/333?text=Table" alt="Table"></div>
+                </div>
+            </div>
+
+            <!-- Details Section -->
+            <div class="room-details">
+                <h3>Details of the room</h3>
+                <div class="price" id="popupRoomPrice">₹ 0</div>
+                <p class="price-note" id="popupRoomPriceNote">~including food</p>
+                <p class="include" id="popupRoomSubtitle">(one person room)</p>
+
+                <button id="bookNowBtn" class="book-btn">BOOK NOW</button>
+
+                <h4>About Room</h4>
+                <ul id="popupRoomDetailsList">
+                    <li>Fully furnished</li>
+                    <li id="popupRoomAvailability">Available: 0</li>
+                </ul>
+                
+                <h4>Provided Materials</h4>
+                <ul>
+                    <li>Free wifi (24-hrs)</li>
+                    <li>Room cleaning service</li>
+                    <li>AC / Non-AC (as per choice)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYMENT POPUP -->
+<div id="paymentPopup" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+">
+    <div style="
+        background: white;
+        width: 90%;
+        max-width: 650px;
+        padding: 20px;
+        border-radius: 16px;
+        position: relative;
+    ">
+
+        <span onclick="closePayment()" style="
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 32px;
+            cursor: pointer;
+        ">×</span>
+
+        <h2 style="margin-bottom: 20px;">Complete Your Payment</h2>
+        
+        <div id="paymentSummary">Booking: ...<br>Amount: ...</div>
+
+
+        <!-- Payment Options (Visible by default) -->
+        <div id="paymentOptionsContainer" class="payment-options">
+            <button class="payment-btn" onclick="openSection('cardSection')">💳 Card Payment</button>
+            <button class="payment-btn" onclick="openSection('netbankingSection')">🏦 Net Banking</button>
+            <button class="payment-btn" onclick="openSection('upiSection')">📱 UPI</button>
+            <button class="payment-btn" onclick="openSection('qrSection')">🔳 QR Code</button>
+        </div>
+
+        <!-- CARD FORM -->
+        <div id="cardSection" class="payment-section">
+            <h3>Card Details</h3>
+            <!-- Added validation patterns -->
+            <input type="text" placeholder="Card Number (e.g., 1234 5678 9012 3456)" required pattern="[\d\s-]{16,19}">
+            <input type="text" placeholder="Name on Card" required>
+            <input type="text" placeholder="Expiry (MM/YY)" required pattern="^(0[1-9]|1[0-2])\/\d{2}$">
+            <input type="text" placeholder="CVV" required pattern="^\d{3,4}$">
+            <button class="pay-now">Pay Now</button>
+        </div>
+
+        <!-- NETBANKING -->
+        <div id="netbankingSection" class="payment-section">
+            <h3>Select Your Bank</h3>
+            <select required>
+                <option value="">-- Select Bank --</option>
+                <option>SBI</option>
+                <option>HDFC Bank</option>
+                <option>ICICI Bank</option>
+                <option>Axis Bank</option>
+            </select>
+            <button class="pay-now">Proceed to Bank</button>
+        </div>
+
+        <!-- UPI -->
+        <div id="upiSection" class="payment-section">
+            <h3>UPI ID</h3>
+            <input type="text" placeholder="example@upi" required pattern="^[\w.-]+@[\w.-]+$">
+            <button class="pay-now">Pay Now</button>
+        </div>
+
+        <!-- QR -->
+        <div id="qrSection" class="payment-section" style="text-align: center;">
+            <h3>Scan QR to Pay</h3>
+            <img src="https://placehold.co/200x200/eee/333?text=SCAN+ME" style="margin:20px auto;display:block;" alt="QR Code">
+            <!-- This section has no validation, just a confirmation button -->
+            <button class="pay-now">I have paid</button>
+        </div>
+        
+        <!-- Payment Success Message (Hidden by default) -->
+        <div id="paymentSuccessMessage" class="payment-section" style="display: none;">
+            <h3>Payment Successfully Done! ✅</h3>
+            <p id="successMessageText">Your booking for [Room Name] is confirmed.</p>
+            <button id="downloadPdfBtn" class="pay-now" style="background: #007bff; margin-top: 10px;">Download Invoice (PDF)</button>
+            <button id="closeSuccessBtn" class="pay-now" style="background: #6c757d; margin-top: 10px;" onclick="closePayment()">Close</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// =============================================
+// === SCRIPT (Redacted, only changed function) ===
+// =============================================
+
+// --- Global object to hold booking info ---
+let currentBooking = {
+    title: "",
+    price: "",
+    image: "",
+    subtitle: "",
+    priceNote: "",
+    availability: ""
+};
+
+// --- localStorage Key for Notifications ---
+const NOTIFICATIONS_KEY = "eHostel_notifications_v1";
+
+function loadNotifications(){ 
+    return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]"); 
+}
+function saveNotifications(n){ 
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(n)); 
+}
+
+// --- 1. Open Room Info Popup (Dynamic) ---
+function openRoomInfo(cardElement) {
+    const data = cardElement.dataset;
+    currentBooking = {
+        title: data.title,
+        price: data.price,
+        image: data.image,
+        subtitle: data.subtitle,
+        priceNote: data.priceNote,
+        availability: data.availability
+    };
+
+    document.getElementById('popupRoomTitle').textContent = currentBooking.title;
+    document.getElementById('popupRoomPrice').textContent = currentBooking.price;
+    document.getElementById('popupRoomPriceNote').textContent = currentBooking.priceNote;
+    document.getElementById('popupRoomSubtitle').textContent = currentBooking.subtitle;
+    document.getElementById('popupRoomAvailability').textContent = `Available: ${currentBooking.availability}`;
+    document.getElementById('popupMainImage').innerHTML = `<img src="${currentBooking.image}" alt="${currentBooking.title}">`;
+    
+    document.getElementById("roomInfoPopup").style.display = "flex";
+}
+
+function closeRoomInfo() {
+    document.getElementById("roomInfoPopup").style.display = "none";
+}
+
+// --- 2. Add Click Listeners to all Room Cards ---
+document.querySelectorAll(".room-card").forEach(card => {
+    card.addEventListener("click", function() {
+        openRoomInfo(this); 
+    });
+});
+
+// --- 3. "Book Now" Button Logic ---
+document.getElementById("bookNowBtn").addEventListener("click", function () {
+    closeRoomInfo();
+    
+    document.getElementById('paymentSummary').innerHTML = 
+        `Booking: <strong>${currentBooking.title}</strong><br>Amount: <strong>${currentBooking.price}</strong>`;
+
+    resetPaymentForm(); // Reset form to initial state
+
+    document.getElementById("paymentPopup").style.display = "flex";
+});
+
+// --- 4. Payment Popup Logic (FIXED) ---
+function closePayment() {
+    document.getElementById("paymentPopup").style.display = "none";
+    resetPaymentForm(); // Ensure form is reset when closing
+}
+
+function openSection(sectionId) {
+    document.getElementById("paymentOptionsContainer").style.display = "none";
+    document.querySelectorAll(".payment-section").forEach(sec => {
+        sec.style.display = "none";
+    });
+    const activeSection = document.getElementById(sectionId);
+    if (activeSection) {
+        activeSection.style.display = "block";
+    }
+}
+
+function resetPaymentForm() {
+    document.querySelectorAll(".payment-section").forEach(sec => {
+        sec.style.display = "none";
+    });
+    document.getElementById("paymentOptionsContainer").style.display = "grid";
+    document.querySelectorAll("#paymentPopup input").forEach(input => input.value = "");
+    document.querySelectorAll("#paymentPopup select").forEach(select => select.selectedIndex = 0);
+}
+
+
+// --- 5. Payment Processing and Validation (FIXED) ---
+document.querySelectorAll(".pay-now").forEach(btn => {
+    btn.addEventListener("click", function () {
+        let section = this.closest(".payment-section");
+        let inputs = section.querySelectorAll("input[required], select[required]");
+        let isValid = true;
+        
+        for (let input of inputs) {
+            if (!input.checkValidity()) {
+                let errorMsg = `Please fill out the ${input.placeholder || 'bank'} field.`;
+                
+                if (input.validity.patternMismatch) {
+                    if (input.placeholder.includes("Card Number")) {
+                        errorMsg = "Please enter a valid 16-digit card number.";
+                    } else if (input.placeholder.includes("Expiry")) {
+                        errorMsg = "Please enter a valid expiry date (MM/YY).";
+                    } else if (input.placeholder.includes("CVV")) {
+                        errorMsg = "Please enter a valid 3 or 4 digit CVV.";
+                    } else if (input.placeholder.includes("UPI")) {
+                        errorMsg = "Please enter a valid UPI ID (e.g., name@upi).";
+                    }
+                } else if (input.validity.valueMissing) {
+                     if (input.tagName === 'SELECT') {
+                        errorMsg = "Please select a bank.";
+                    } else {
+                        errorMsg = `The field "${input.placeholder}" is required.`;
+                    }
+                }
+                
+                // Using console.error as alert() is not supported
+                console.error("Payment Validation Error:", errorMsg); 
+                // We can't use alert(), so we'll just stop.
+                // A proper implementation would show this error in the UI.
+                isValid = false;
+                break; 
+            }
+        }
+
+        if (!isValid) {
+            return;
+        }
+
+        processSuccessfulPayment();
+    });
+});
+
+function processSuccessfulPayment() {
+    document.getElementById("paymentOptionsContainer").style.display = "none";
+    document.querySelectorAll(".payment-section").forEach(sec => {
+        sec.style.display = "none"; 
+    });
+
+    const successMsgDiv = document.getElementById("paymentSuccessMessage");
+    document.getElementById('successMessageText').innerHTML = 
+        `Your booking for <strong>${currentBooking.title}</strong> (${currentBooking.price}) is confirmed.`;
+    successMsgDiv.style.display = "block"; 
+
+    addPaymentNotification();
+    
+    document.getElementById('downloadPdfBtn').onclick = generateInvoicePDF;
+}
+
+// --- 6. Add Notification Function (MODIFIED) ---
+/**
+ * [MODIFIED] Adds a 'payment' notification with a data payload.
+ */
+function addPaymentNotification() {
+    const notifs = loadNotifications();
+    
+    // NEW: Get the user who is logged in
+    const userName = localStorage.getItem("userName") || "Unknown User"; 
+    // NEW: Get numerical cost
+    const roomCost = parseFloat(currentBooking.price.replace(/[^0-9]/g, '')) || 0;
+
+    notifs.unshift({
+        id: Date.now(),
+        type: "payment", // NEW: Specific type
+        message: `Payment confirmed for <strong>${currentBooking.title}</strong> (${currentBooking.price}).`,
+        timestamp: new Date().toISOString(),
+        // NEW: Data payload for the action
+        actionData: {
+            userName: userName,
+            roomType: currentBooking.title,
+            roomCost: roomCost,
+            amountPaid: roomCost // Assumes payment in full
+        }
+    });
+    
+    saveNotifications(notifs);
+}
+
+// --- 7. Generate PDF Invoice Function ---
+function generateInvoicePDF() {
+    if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+        console.error("Error: PDF library not loaded. Cannot download invoice.");
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const userName = localStorage.getItem("userName") || "Valued Customer";
+
+    // --- Create Invoice Content ---
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("eHostel Payment Invoice", 105, 20, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Bill To:", 20, 40);
+    doc.text(userName, 20, 46);
+    
+    doc.text(`Invoice #: ${Date.now().toString().slice(-6)}`, 180, 40, { align: "right" });
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 180, 46, { align: "right" });
+
+    // Table Header
+    doc.setLineWidth(0.5);
+    doc.rect(20, 60, 170, 10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Description", 25, 67);
+    doc.text("Amount", 180, 67, { align: "right" });
+    
+    // Table Body
+    doc.rect(20, 70, 170, 10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Hostel Room Booking: ${currentBooking.title}`, 25, 77);
+    doc.text(currentBooking.price, 180, 77, { align: "right" });
+    
+    // Table Footer (Total)
+    doc.rect(20, 80, 170, 10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Paid", 140, 87);
+    doc.text(currentBooking.price, 180, 87, { align: "right" });
+
+    doc.setFontSize(10);
+    doc.text("Thank you for your payment!", 105, 110, { align: "center" });
+
+    // --- Save the PDF ---
+    const safeTitle = currentBooking.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    doc.save(`eHostel_Invoice_${safeTitle}.pdf`);
+}
+
+
+// --- 8. Add animation on scroll (Original script) ---
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+document.querySelectorAll('.room-card').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(card);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>User Management</title>
+<style>
+  body {
+    font-family: Poppins, sans-serif;
+    margin: 0;
+    background: #f6f8fb;
+    color: #0d1b3d;
+  }
+  .wrap {
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 20px;
+  }
+  .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  .card {
+    background: #fff;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+    display: flex;
+    flex-direction: column;
+  }
+  input, select, button {
+    padding: 11px;
+    border-radius: 8px;
+    border: 1px solid #d6ddea;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  input:first-child, select:first-child {
+    margin-top: 0;
+  }
+
+  button {
+    background: #2f6fed;
+    color: white;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+  }
+  button:hover {
+    background: #1e55c4;
+  }
+  
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .list-header h3 {
+    margin: 0;
+  }
+  .filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .filter-controls label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+  }
+  .filter-controls select {
+    width: 120px;
+    padding: 8px;
+    margin-top: 0;
+  }
+
+  .list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    padding: 8px;
+    flex-grow: 1;
+  }
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eef2f6;
+  }
+  .list-item:last-child {
+    border-bottom: none;
+  }
+  
+  .item-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .item-details p {
+    margin: 0;
+    font-weight: 500;
+  }
+  .item-details span {
+    font-size: 13px;
+    color: #666;
+  }
+  .payment-status {
+      font-size: 13px;
+      margin-top: 4px;
+      font-weight: 500;
+  }
+
+  .item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .item-actions button {
+    width: 80px;
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-left: 6px;
+  }
+  .btn-approve {
+    background: #28a745;
+  }
+  .btn-approve:hover {
+    background: #218838;
+  }
+  .btn-reject {
+    background: #ef4444;
+  }
+  .btn-reject:hover {
+    background: #dc2626;
+  }
+  .btn-edit {
+    background: #ffc107;
+  }
+  .btn-edit:hover {
+    background: #e0a800;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h2>User Management</h2>
+  
+  <div class="grid-container">
+    
+    <!-- CARD 1: Register New User -->
+    <div class="card">
+      <h3>Register New User</h3>
+      <form id="registerForm">
+        <input id="userName" placeholder="Full Name" required>
+        <input id="userEmail" type="email" placeholder="Email Address" required>
+        
+        <input id="userStudentPhone" type="tel" placeholder="Student's Phone Number" required>
+        <input id="userParentPhone" type="tel" placeholder="Parent's Phone Number" required>
+
+        <input id="userRoom" type="text" placeholder="Room No. (e.g., B-101)" required>
+        
+        <select id="userRoomType" required>
+            <option value="">-- Select Room Type --</option>
+            <!-- [FIX] Changed values to match hostel-details.html -->
+            <option value="Super Delux Room">Super Delux Room</option>
+            <option value="Delux Room">Delux Room</option>
+            <option value="Standard Room">Standard Room</option>
+        </select>
+        <input id="userRoomCost" type="number" placeholder="Total Room Cost (e.g., 90000)" required>
+        <input id="userAmountPaid" type="number" placeholder="Amount Paid (e.g., 0)" required>
+
+        <input id="userPass" type="password" placeholder="Password" required>
+        <button type="submit" style="margin-top: 12px;">Register User</button>
+      </form>
+    </div>
+    
+    <!-- CARD 2: Pending Registrations -->
+    <div class="card">
+      <div class="list-header">
+        <h3>Pending Registrations</h3>
+        <div class="filter-controls">
+          <label for="sortPending">Sort by:</label>
+          <select id="sortPending">
+            <option value="none">None</option>
+            <option value="asc">Name (A-Z)</option>
+            <option value="desc">Name (Z-A)</option>
+          </select>
+        </div>
+      </div>
+      <div class="list-container" id="pendingList">
+        <!-- Pending users will be loaded here -->
+      </div>
+    </div>
+    
+    <!-- CARD 3: All Members -->
+    <div class="card">
+      <div class="list-header">
+        <h3>All Members</h3>
+        <div class="filter-controls">
+          <label for="sortMembers">Sort by:</label>
+          <select id="sortMembers">
+            <option value="none">None</option>
+            <option value="asc">Name (A-Z)</option>
+            <option value="desc">Name (Z-A)</option>
+          </select>
+        </div>
+      </div>
+      <div class="list-container" id="membersList">
+        <!-- Approved members will be loaded here -->
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+const USERS_KEY = "eHostel_users_v1";
+
+function loadUsers() {
+    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+}
+
+function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+// --- Register User ---
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const users = loadUsers();
+    
+    const newUser = {
+        id: Date.now(),
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        studentPhone: document.getElementById('userStudentPhone').value,
+        parentPhone: document.getElementById('userParentPhone').value,
+        room: document.getElementById('userRoom').value,
+        roomType: document.getElementById('userRoomType').value,
+        roomCost: parseFloat(document.getElementById('userRoomCost').value) || 0,
+        amountPaid: parseFloat(document.getElementById('userAmountPaid').value) || 0,
+        password: document.getElementById('userPass').value,
+        status: 'pending'
+    };
+    
+    users.push(newUser);
+    saveUsers(users);
+    
+    console.log('User registered and awaiting approval.'); 
+    this.reset();
+    renderLists();
+});
+
+// --- Render Lists ---
+function renderLists() {
+    const users = loadUsers();
+    
+    const sortPending = document.getElementById('sortPending').value;
+    const sortMembers = document.getElementById('sortMembers').value;
+    
+    let pendingUsers = users.filter(u => u.status === 'pending');
+    let approvedUsers = users.filter(u => u.status === 'approved');
+    
+    const sortFn = (a, b) => a.name.localeCompare(b.name);
+    
+    if (sortPending === 'asc') {
+        pendingUsers.sort(sortFn);
+    } else if (sortPending === 'desc') {
+        pendingUsers.sort(sortFn).reverse();
+    }
+    
+    if (sortMembers === 'asc') {
+        approvedUsers.sort(sortFn);
+    } else if (sortMembers === 'desc') {
+        approvedUsers.sort(sortFn).reverse();
+    }
+
+    // 3. Render Pending List
+    const pendingList = document.getElementById('pendingList');
+    pendingList.innerHTML = '';
+    if (pendingUsers.length === 0) {
+        pendingList.innerHTML = '<p style="text-align:center;color:#888;padding:10px;">No pending registrations.</p>';
+    }
+    pendingUsers.forEach(user => {
+        pendingList.innerHTML += `
+            <div class="list-item">
+                <div class="item-details">
+                    <p>${user.name}</p>
+                    <span>${user.email} | ${user.room || 'N/A'}</span>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-approve" onclick="approveUser(${user.id})">Approve</button>
+                    <button class="btn-reject" onclick="deleteUser(${user.id})">Reject</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    // 4. Render Members List
+    const membersList = document.getElementById('membersList');
+    membersList.innerHTML = '';
+    if (approvedUsers.length === 0) {
+        membersList.innerHTML = '<p style="text-align:center;color:#888;padding:10px;">No approved members.</p>';
+    }
+    approvedUsers.forEach(user => {
+        let paymentStatus = 'Unpaid';
+        let statusColor = '#ef4444'; 
+        
+        const cost = user.roomCost || 0;
+        const paid = user.amountPaid || 0;
+
+        if (cost > 0 && paid >= cost) {
+            paymentStatus = 'Paid';
+            statusColor = '#28a745';
+        } else if (paid > 0) {
+            paymentStatus = 'Partial';
+            statusColor = '#ffc107';
+        } else if (cost === 0) {
+            paymentStatus = 'N/A';
+            statusColor = '#666'; 
+        }
+
+        membersList.innerHTML += `
+            <div class="list-item">
+                <div class="item-details">
+                    <p>${user.name}</p>
+                    <span>${user.email} | ${user.room || 'N/A'} (${user.roomType || 'N/A'})</span>
+                    <span>Student Ph: ${user.studentPhone || 'N/A'}</span>
+                    <span class="payment-status">
+                        Paid: ₹${paid} / ${cost} 
+                        (<strong style="color:${statusColor};">${paymentStatus}</strong>)
+                    </span>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-edit" onclick="editUser(${user.id})">Edit</button>
+                    <button class="btn-reject" onclick="deleteUser(${user.id})">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// --- Actions ---
+function approveUser(id) {
+    const users = loadUsers();
+    const user = users.find(u => u.id === id);
+    if (user) {
+        user.status = 'approved';
+        saveUsers(users);
+        renderLists();
+
+        const FEES_KEY = "eHostel_fees_v1";
+        const fees = JSON.parse(localStorage.getItem(FEES_KEY) || "[]");
+        if (!fees.some(f => f.id === user.id)) {
+             fees.push({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                amount: user.roomCost || 0,
+                paid: (user.amountPaid || 0) >= (user.roomCost || 0)
+             });
+             localStorage.setItem(FEES_KEY, JSON.stringify(fees));
+        }
+    }
+}
+
+function deleteUser(id) {
+    let users = loadUsers();
+    users = users.filter(u => u.id != id);
+    saveUsers(users);
+    renderLists();
+}
+
+function editUser(id) {
+    const users = loadUsers();
+    const user = users.find(u => u.id == id);
+    if (user) {
+        document.getElementById('userName').value = user.name;
+        document.getElementById('userEmail').value = user.email;
+        document.getElementById('userStudentPhone').value = user.studentPhone || '';
+        document.getElementById('userParentPhone').value = user.parentPhone || '';
+        document.getElementById('userRoom').value = user.room || '';
+        document.getElementById('userRoomType').value = user.roomType || '';
+        document.getElementById('userRoomCost').value = user.roomCost || 0;
+        document.getElementById('userAmountPaid').value = user.amountPaid || 0;
+        document.getElementById('userPass').value = user.password || '';
+        
+        deleteUser(user.id);
+        console.log(`Editing ${user.name}. Make changes and click "Register User" to re-save.`);
+    }
+}
+
+
+// =========================================================
+// === NEW FUNCTION TO PROCESS NOTIFICATION ACTIONS ===
+// =========================================================
+function processNotificationAction() {
+    const actionDataJSON = localStorage.getItem('eHostel_notification_action');
+    if (!actionDataJSON) {
+        return; // No action to perform
+    }
+
+    try {
+        const data = JSON.parse(actionDataJSON);
+        
+        // We only care about payment data for this page
+        if (data && data.userName && data.roomType) {
+            const users = loadUsers();
+            // Find the user by name (as setup in hostel-details)
+            const userIndex = users.findIndex(u => u.name === data.userName);
+
+            if (userIndex > -1) {
+                // Found the user, now update them
+                users[userIndex].roomType = data.roomType;
+                users[userIndex].roomCost = data.roomCost;
+                users[userIndex].amountPaid = data.amountPaid;
+                
+                console.log(`User ${data.userName} updated from notification: Room Type: ${data.roomType}, Cost: ${data.roomCost}`);
+                
+                // Save the entire updated user list
+                saveUsers(users);
+
+                // --- ALSO UPDATE THE FEE-MANAGEMENT LIST ---
+                const FEES_KEY = "eHostel_fees_v1";
+                const fees = JSON.parse(localStorage.getItem(FEES_KEY) || "[]");
+                const feeIndex = fees.findIndex(f => f.id === users[userIndex].id);
+                
+                if (feeIndex > -1) {
+                    // Update existing fee record
+                    fees[feeIndex].amount = data.roomCost;
+                    fees[feeIndex].paid = true;
+                } else {
+                    // Add new fee record
+                    fees.push({
+                        id: users[userIndex].id,
+                        name: users[userIndex].name,
+                        email: users[userIndex].email,
+                        amount: data.roomCost,
+                        paid: true
+                    });
+                }
+                localStorage.setItem(FEES_KEY, JSON.stringify(fees));
+
+            } else {
+                console.warn(`Notification action: User "${data.userName}" not found.`);
+            }
+        }
+    } catch (e) {
+        console.error("Failed to process notification action:", e);
+    } finally {
+        // CRITICAL: Remove the key so it doesn't run again
+        localStorage.removeItem('eHostel_notification_action');
+    }
+}
+
+
+// --- Initial Load ---
+document.getElementById('sortPending').addEventListener('change', renderLists);
+document.getElementById('sortMembers').addEventListener('change', renderLists);
+
+// --- [NEW] Process any pending notification actions FIRST ---
+processNotificationAction();
+
+// Initial render (will now show the updated data)
+renderLists();
+</script>
+
+</body>
+</html>

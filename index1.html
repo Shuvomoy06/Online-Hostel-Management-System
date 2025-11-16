@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>eHostel Management System</title>
+  <link rel="stylesheet" href="style1.css"/>
+
+  <style>
+    /* AUTH BUTTONS */
+    .auth {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .auth a {
+      text-decoration: none;
+      color: #0d1b3d;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    .auth a.signup {
+      background: #2f6fed;
+      color: #fff;
+    }
+
+    .logout-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: #ef4444;
+      color: white;
+    }
+
+    .greeting {
+      color: #0d1b3d;
+      font-weight: 600;
+    }
+
+    header { 
+      z-index: 200; 
+      position: fixed; 
+      top:0; 
+      left:0; 
+      right:0; 
+    }
+    body { padding-top: 85px; }
+
+    /* FIX: ALIGN NAV LINKS VERTICALLY */
+    .center-nav a {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* NOTIFICATION BADGE */
+    .notif-badge {
+      background-color: #ef4444; /* red */
+      color: white;
+      padding: 1px 5px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      position: relative;
+      top: -10px; 
+      left: -5px; 
+      min-width: 10px; 
+      height: 10px;
+      line-height: 10px;
+      text-align: center;
+      display: none; /* Hide by default */
+    }
+
+    /* --- NOTIFICATION SIDEBAR STYLES --- */
+    .notif-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1001;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .notif-sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 90%;
+        max-width: 400px;
+        height: 100%;
+        background: #f4f6fb;
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+        z-index: 1002;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-out;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .notif-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .notif-sidebar.active {
+        transform: translateX(0);
+    }
+
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 22px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        flex-shrink: 0;
+    }
+    .notif-header h2 {
+        margin: 0;
+        font-size: 20px;
+    }
+    .notif-close {
+        font-size: 32px;
+        font-weight: 300;
+        cursor: pointer;
+        line-height: 1;
+        color: #555;
+    }
+    .notif-close:hover {
+        color: #000;
+    }
+
+    .notif-list {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    
+    .notif-card {
+        background: #fff; 
+        padding: 18px 22px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        position: relative; 
+    }
+    .notif-card:hover {
+        transform: translateY(-2px);
+    }
+    .notif-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    .notif-content p {
+        margin: 0;
+        font-weight: 500;
+        font-size: 14px;
+        color: #333;
+        padding-right: 15px;
+    }
+    .notif-content span {
+        font-size: 12px;
+        color: #555;
+    }
+    .notif-card.leave { border-left: 5px solid #ffa500; }
+    .notif-card.fee { border-left: 5px solid #ef4444; }
+    .notif-card.warning { border-left: 5px solid #f59e0b; }
+    .notif-card.info { border-left: 5px solid #3b82f6; }
+    .notif-card.payment { border-left: 5px solid #28a745; } /* NEW */
+
+    .notif-delete {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        font-size: 22px;
+        font-weight: 300;
+        color: #aaa;
+        cursor: pointer;
+        line-height: 1;
+        padding: 5px;
+    }
+    .notif-delete:hover {
+        color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-wrapper">
+      <div class="logo">eHostel</div>
+
+      <nav class="center-nav">
+        <a href="#" id="dashboardBtn">Dashboard</a>
+        <a href="hostel-details.html">Hostel Details</a>
+        <a href="#contact">Contact Us</a>
+        <a href="features.html" target="_blank">Features</a>
+        <a href="#" id="openNotifBtn">Notifications 🔔<span id="notifBadge"></span></a>
+      </nav>
+
+      <div class="auth" id="authArea">
+        <a href="index.html" class="login">Login</a>
+        <a href="index.html" class="signup">Sign Up</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="overlay"></div>
+    <div class="hero-content">
+      <h1>Welcome to <br/> e-Hostel Management</h1>
+      <p>Manage rooms, allocations, payments and students in one dashboard.</p>
+      <button id="getStartedBtn" class="btn-started">Get Started</button>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="card">
+      <img src="https://cdn-icons-png.flaticon.com/512/4333/4333609.png"/>
+      <h3>Total rooms for boys</h3>
+      <p class="number">78</p>
+    </div>
+    <div class="card">
+      <img src="https://cdn-icons-png.flaticon.com/512/4333/4333600.png"/>
+      <h3>Total rooms for girls</h3>
+      <p class="number">35</p>
+    </div>
+    <div class="card">
+      <img src="https://cdn-icons-png.flaticon.com/512/1046/1046857.png"/>
+      <h3>Empty rooms</h3>
+      <p class="number">27</p>
+    </div>
+  </section>
+
+  <!-- WHY CHOOSE -->
+  <section class="why-choose" id="whyChoose">
+    <h2>Why Choose Us?</h2>
+    <div class="choose-container">
+      <div class="choose-card">
+        <h3>Automated Room Allocation</h3>
+        <p>Our system intelligently assigns rooms based on preferences, availability and student profiles.</p>
+      </div>
+      <div class="choose-card">
+        <h3>24/7 Dashboard Access</h3>
+        <p>Students and admins can access hostel details anytime with secure login.</p>
+      </div>
+      <div class="choose-card">
+        <h3>Digital Fee Management</h3>
+        <p>Track fee payments, dues and generate receipts instantly.</p>
+      </div>
+      <div class="choose-card">
+        <h3>Security & Attendance Tracking</h3>
+        <p>Daily check-in/out tracking ensures safety and transparency.</p>
+      </div>
+      <div class="choose-card">
+        <h3>Maintenance Request System</h3>
+        <p>Raise and track complaints online with real-time updates.</p>
+      </div>
+      <div class="choose-card">
+        <h3>Fully Customizable</h3>
+        <p>Can be tailored for colleges, universities and PGs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="footer-info" style="background:#243444; color:white; padding:60px 60px; display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:250px;">
+      <h3 style="font-size:22px; margin-bottom:10px;">eHostel</h3>
+      <hr style="width:50px; border:2px solid #2fefc4; margin-bottom:20px;">
+      <p>Your trusted digital hostel management platform to automate room allocation,
+        student records, payments and daily operations.</p>
+    </div>
+    <div style="flex:1; min-width:250px;">
+      <h3 style="font-size:22px; margin-bottom:10px;">Quick Links</h3>
+      <hr style="width:50px; border:2px solid #2fefc4; margin-bottom:20px;">
+      <p><a href="#whyChoose" style="color:#cce7ff; text-decoration:none;">Why Choose Us</a></p>
+      <p><a href="#" style="color:#cce7ff; text-decoration:none;">Facilities</a></p>
+      <p><a href="#" style="color:#cce7ff; text-decoration:none;">Hostel Rules</a></p>
+      <p><a href="#" style="color:#cce7ff; text-decoration:none;">Support</a></p>
+    </div>
+    <div style="flex:1; min-width:250px;">
+      <h3 style="font-size:22px; margin-bottom:10px;">Services</h3>
+      <hr style="width:50px; border:2px solid #2fefc4; margin-bottom:20px;">
+      <p>Room Allocation</p>
+      <p>Student Database</p>
+      <p>Fee & Payment Management</p>
+      <p>Complaint Tracking</p>
+    </div>
+    <div style="flex:1; min-width:250px;">
+      <h3 style="font-size:22px; margin-bottom:10px;">Contact Us</h3>
+      <hr style="width:50px; border:2px solid #2fefc4; margin-bottom:20px;">
+      <p>📍 MG Road, Kolkata, India</p>
+      <p>📞 +91 98765 43210</p>
+      <p>📧 support@ehostel.com</p>
+    </div>
+  </section>
+
+  <!-- COPYRIGHT -->
+  <footer style="background:#1b2936; padding:20px; text-align:center; color:#d5d5d5;">
+    © 2025 eHostel Management System. All rights reserved.
+  </footer>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-overlay" id="notifOverlay"></div>
+  <div class="notif-sidebar" id="notifSidebar">
+      <div class="notif-header">
+          <h2>Notifications 🔔</h2>
+          <span class="notif-close" id="notifCloseBtn">×</span>
+      </div>
+      <div class="notif-list" id="notificationListContainer">
+          <!-- Notifications will be loaded here by JavaScript -->
+      </div>
+  </div>
+
+<script>
+// --- Wait for the document to be fully loaded ---
+document.addEventListener("DOMContentLoaded", function() {
+
+  /* ---------- AUTH LOGIC ---------- */
+  const authArea = document.getElementById("authArea");
+  function renderAuthArea() {
+    const loggedIn = localStorage.getItem("loggedIn") === "true";
+    const userName = localStorage.getItem("userName") || "";
+    if (loggedIn) {
+      authArea.innerHTML = `
+        <span class="greeting">Hi, ${userName}</span>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+      `;
+      document.getElementById("logoutBtn").onclick = () => {
+        localStorage.removeItem("loggedIn");
+        localStorage.removeItem("userName");
+        window.location.href = "index.html";
+      };
+    } else {
+      authArea.innerHTML = `
+        <a href="index.html" class="login">Login</a>
+        <a href="index.html" class="signup">Sign Up</a>
+      `;
+    }
+  }
+  renderAuthArea();
+
+
+  /* ---------- GET STARTED ---------- */
+  document.getElementById("getStartedBtn").onclick = () => {
+    let loggedIn = localStorage.getItem("loggedIn") === "true";
+    if (!loggedIn) {
+      window.location.href = "index.html";
+    } else {
+      window.scrollTo({
+        top: document.getElementById("whyChoose").offsetTop - 80,
+        behavior: "smooth",
+      });
+    }
+  };
+
+
+  /* ---------- DASHBOARD BUTTON SCROLL FIXED ---------- */
+  document.getElementById("dashboardBtn").onclick = (e) => {
+    e.preventDefault();
+    window.scrollTo({
+      top: document.getElementById("whyChoose").offsetTop - 80,
+      behavior: "smooth",
+    });
+  };
+
+
+  /* ================================================== */
+  /* === ALL NOTIFICATION LOGIC (BADGE + PANEL) === */
+  /* ================================================== */
+
+  // --- All localStorage Keys ---
+  const LEAVE_KEY = "eHostel_leaves_v1";
+  const FEES_KEY = "eHostel_fees_v1";
+  const NOTIFICATIONS_KEY = "eHostel_notifications_v1";
+
+  // --- Helper: Load Functions ---
+  function loadLeaves(){ return JSON.parse(localStorage.getItem(LEAVE_KEY) || "[]"); }
+  function loadFees(){ return JSON.parse(localStorage.getItem(FEES_KEY) || "[]"); }
+  function loadNotifications(){ return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]"); }
+  function saveNotifications(n){ localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(n)); }
+
+
+  /* ---------- (A) NOTIFICATION BADGE LOGIC ---------- */
+  function updateNotificationBadge() {
+    let count = 0;
+    try {
+      count += loadLeaves().filter(l => l.status === 'pending').length;
+      count += loadFees().filter(f => !f.paid).length;
+      count += loadNotifications().length;
+    } catch (e) {
+      console.error("Error reading notifications from localStorage", e);
+    }
+
+    const badge = document.getElementById("notifBadge");
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+  updateNotificationBadge();
+  
+
+  /* ---------- (B) NOTIFICATION SIDEBAR LOGIC (MODIFIED) ---------- */
+  
+  const openBtn = document.getElementById('openNotifBtn');
+  const closeBtn = document.getElementById('notifCloseBtn');
+  const overlay = document.getElementById('notifOverlay');
+  const sidebar = document.getElementById('notifSidebar');
+  const notifListContainer = document.getElementById('notificationListContainer');
+
+  function timeAgo(isoDate) {
+      if (!isoDate) return 'Pending action';
+      const date = new Date(isoDate);
+      const seconds = Math.floor((new Date() - date) / 1000);
+      let interval = seconds / 31536000;
+      if (interval > 1) return Math.floor(interval) + " years ago";
+      interval = seconds / 2592000;
+      if (interval > 1) return Math.floor(interval) + " months ago";
+      interval = seconds / 86400;
+      if (interval > 1) return Math.floor(interval) + " days ago";
+      interval = seconds / 3600;
+      if (interval > 1) return Math.floor(interval) + " hours ago";
+      interval = seconds / 60;
+      if (interval > 1) return Math.floor(interval) + " minutes ago";
+      return Math.floor(seconds) + " seconds ago";
+  }
+
+  // --- Main Render Function (Builds the card list) ---
+  function renderNotifications() {
+      const listEl = notifListContainer;
+      listEl.innerHTML = "";
+      
+      let allNotifications = [];
+
+      // 1. Get pending leave requests
+      const pendingLeaves = loadLeaves().filter(l => l.status === 'pending');
+      pendingLeaves.forEach(l => {
+          allNotifications.push({
+              id: l.id,
+              source: 'leaves', 
+              type: 'leave',
+              icon: '🗓️',
+              message: `New leave request from <strong>${l.name}</strong> (${l.from} to ${l.to}).`,
+              timestamp: l.createdAt,
+              link: 'leave-management.html'
+          });
+      });
+
+      // 2. Get unpaid fees
+      const unpaidFees = loadFees().filter(f => !f.paid);
+      unpaidFees.forEach(f => {
+          allNotifications.push({
+              id: f.id,
+              source: 'fees', 
+              type: 'fee',
+              icon: '💰',
+              message: `<strong>${f.name}</strong> has an unpaid fee of ₹ ${f.amount}.`,
+              timestamp: f.lastReminder || null,
+              link: 'fee-management.html'
+          });
+      });
+
+      // 3. Get explicit warnings/notifications
+      const explicitNotifs = loadNotifications();
+      explicitNotifs.forEach(n => {
+          let icon = '🔔';
+          let link = '#'; 
+          const nType = n.type.toLowerCase();
+          
+          if (nType === 'warning') {
+              icon = '⚠️';
+              link = 'emergency-management.html';
+          } else if (nType === 'payment') {
+              icon = '✅';
+              link = 'user-management.html'; // Set the link for payment
+          } else if (nType === 'info') { // 'info' is used by AI Allocation
+              icon = 'ℹ️'; 
+              link = 'ai-allocation.html';
+          }
+
+          allNotifications.push({
+              id: n.id,
+              source: 'notifications', 
+              type: nType,
+              icon: icon,
+              message: n.message,
+              timestamp: n.timestamp,
+              link: link,
+              actionData: n.actionData || null // Pass along the action data
+          });
+      });
+
+      // --- Sort notifications by date (newest first) ---
+      allNotifications.sort((a, b) => {
+          if (!a.timestamp) return 1;
+          if (!b.timestamp) return -1;
+          return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+
+      // --- Render to HTML ---
+      if (allNotifications.length === 0) {
+          listEl.innerHTML = `<div class="notif-card info">
+              <div class="notif-icon">🎉</div>
+              <div class="notif-content">
+                  <p>All caught up!</p>
+                  <span>You have no new notifications.</span>
+              </div>
+          </div>`;
+          return;
+      }
+
+      allNotifications.forEach(n => {
+          const card = document.createElement("div");
+          card.className = `notif-card ${n.type}`;
+          card.style.cursor = 'pointer';
+          
+          // --- [THIS IS THE KEY FEATURE] ---
+          if (n.type === 'payment' && n.actionData) {
+              // This is the special payment notification
+              card.onclick = () => {
+                  // 1. Store the action data for user-management.html to read
+                  localStorage.setItem('eHostel_notification_action', JSON.stringify(n.actionData));
+                  // 2. Delete this notification so it's not clicked again
+                  deleteNotification(n.id);
+                  // 3. Redirect to user management
+                  window.location.href = n.link;
+              };
+          } else if (n.link) {
+              // This is a standard notification
+              card.onclick = () => window.location.href = n.link;
+          }
+          // --- [END OF KEY FEATURE] ---
+
+          let deleteButtonHtml = '';
+          let timestampText = timeAgo(n.timestamp);
+
+          if (n.source === 'notifications') {
+              // Only notifications from the 'notifications' key can be deleted
+              deleteButtonHtml = `<span class="notif-delete" data-id="${n.id}">×</span>`;
+          } else if (n.source === 'leaves') {
+              timestampText += ' • (Go to Leaves to action)';
+          } else if (n.source === 'fees') {
+              timestampText += ' • (Go to Fees to action)';
+          }
+
+          card.innerHTML = `
+              <div class="notif-icon">${n.icon}</div>
+              <div class="notif-content">
+                  <p>${n.message}</p>
+                  <span>${timestampText}</span>
+              </div>
+              ${deleteButtonHtml} 
+          `;
+          listEl.appendChild(card);
+      });
+
+      // Add click listeners for delete buttons
+      listEl.querySelectorAll('.notif-delete').forEach(button => {
+          button.addEventListener('click', (event) => {
+              event.stopPropagation(); 
+              const id = Number(event.target.dataset.id);
+              deleteNotification(id);
+          });
+      });
+  }
+
+  function deleteNotification(id) {
+      let notifs = loadNotifications();
+      let filteredNotifs = notifs.filter(n => n.id != id);
+      saveNotifications(filteredNotifs);
+      renderNotifications();
+      updateNotificationBadge();
+  }
+
+
+  // --- Open/Close Event Listeners ---
+  function openSidebar(e) {
+      e.preventDefault(); 
+      renderNotifications(); 
+      overlay.classList.add('active');
+      sidebar.classList.add('active');
+      updateNotificationBadge(); 
+  }
+
+  function closeSidebar() {
+      overlay.classList.remove('active');
+      sidebar.classList.remove('active');
+      updateNotificationBadge(); 
+  }
+
+  openBtn.addEventListener('click', openSidebar);
+  closeBtn.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+
+}); // --- End of DOMContentLoaded ---
+</script>
+
+</body>
+</html>

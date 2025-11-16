@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Leave Management</title>
+  <!-- 
+    jsPDF library for generating PDF applications.
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body{font-family:Poppins, sans-serif;margin:0;background:#f6f8fb;color:#0d1b3d}
+    .wrap{max-width:1100px;margin:30px auto;padding:20px}
+    .card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
+    
+    input,textarea,select{padding:10px;border-radius:8px;border:1px solid #d6ddea;width:100%; box-sizing: border-box;}
+    #leaveForm > input, #leaveForm > textarea, #leaveForm > select, #leaveForm > div {
+        margin-top: 8px;
+    }
+    
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eef2f6;text-align:left}
+    button{padding:8px 10px;border-radius:8px;border:none;background:#2f6fed;color:white;cursor:pointer; font-size: 13px;}
+    
+    .btn-approve { background: #28a745; }
+    .btn-approve:hover { background: #218838; }
+    .btn-reject { background: #ef4444; }
+    .btn-reject:hover { background: #dc2626; }
+    .btn-view { background: #007bff; }
+    .btn-view:hover { background: #0056b3; }
+    .btn-pdf { background: #17a2b8; margin-top: 15px; }
+    .btn-pdf:hover { background: #117a8b; }
+
+    .status-approved { color: #28a745; font-weight: 700; }
+    .status-rejected { color: #ef4444; font-weight: 700; }
+    .status-pending { color: #6c757d; font-weight: 700; }
+
+    /* Modal Styles */
+    .modal-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: 300;
+      color: #888;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #000; }
+    .modal-content h3 { margin-top: 0; margin-bottom: 15px; }
+    .modal-details { font-size: 14px; color: #333; margin-bottom: 15px; }
+    .modal-details strong { display: inline-block; width: 90px; }
+    .modal-reason {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 100px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    label.form-label {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: -4px;
+        display: block;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Hostel Leave Management</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:20px">
+    <div class="card">
+      <h3>Apply for Leave (Student)</h3>
+      
+      <form id="leaveForm">
+        <input id="leaveName" placeholder="Your full name" required>
+        
+        <label for="leaveFrom" class="form-label">From Date</label>
+        <input id="leaveFrom" type="date" required>
+        
+        <label for="leaveTo" class="form-label">Till Date</label>
+        <input id="leaveTo" type="date" required>
+
+        <label for="leaveContactPref" class="form-label">Contact Preference</label>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <select id="leaveContactPref" style="margin-top: 0;">
+            <option value="Call to">Call to</option>
+            <option value="SMS to">SMS to</option>
+          </select>
+          <input id="leaveContactNum" type="tel" placeholder="Contact Number" style="margin-top: 0;" required>
+        </div>
+
+        <label for="leaveType" class="form-label">Leave Type</label>
+        <select id="leaveType">
+          <option value="Outpass">Outpass (Short duration)</option>
+          <option value="Night Pass">Night Pass</option>
+          <option value="Temporary">Temporary Leave</option>
+          <option value="Emergency/Permanent">Emergency / Permanent Leave</option>
+        </select>
+        
+        <textarea id="leaveReason" rows="4" placeholder="Reason (Required for leave)"></textarea>
+        
+        <button type="submit" style="margin-top:10px">Submit Leave Request</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>All Leave Requests</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+            <th>View</th>
+          </tr>
+        </thead>
+        <tbody id="leaveTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 
+  Modal for viewing leave application
+  UPDATED: Added "Submitted" field
+-->
+<div id="leaveModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeLeaveModal()">×</span>
+    <h3 id="modalTitle">Leave Application</h3>
+    <div class="modal-details">
+      <p><strong>Name:</strong> <span id="modalName">...</span></p>
+      <p><strong>Dates:</strong> <span id="modalDates">...</span></p>
+      <p><strong>Type:</strong> <span id="modalType">...</span></p>
+      <p><strong>Contact:</strong> <span id="modalContact">...</span></p>
+      <!-- NEWLY ADDED FIELD -->
+      <p><strong>Submitted:</strong> <span id="modalSubmittedAt">...</span></p>
+    </div>
+    <h4>Reason:</h4>
+    <div class="modal-reason" id="modalReason">
+      ...
+    </div>
+    <button id="modalPdfBtn" class="btn-pdf">Download as PDF</button>
+  </div>
+</div>
+
+
+<script>
+const LEAVE_KEY = "eHostel_leaves_v1";
+function loadLeaves(){ return JSON.parse(localStorage.getItem(LEAVE_KEY) || "[]"); }
+function saveLeaves(a){ localStorage.setItem(LEAVE_KEY, JSON.stringify(a)); }
+
+// === NEW HELPER FUNCTION ===
+/**
+ * Formats an ISO 8601 string into a readable date and time.
+ * e.g., "16 Nov 2025, 7:08 PM"
+ */
+function formatDateTime(isoString) {
+    if (!isoString) return 'N/A';
+    const date = new Date(isoString);
+    const options = {
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true
+    };
+    // Using 'en-IN' for an India-friendly locale, but 'en-US' or 'en-GB' also work
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
+}
+
+// === SUBMIT LISTENER (No changes, already captures createdAt) ===
+document.getElementById("leaveForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const name = document.getElementById("leaveName").value.trim();
+  const from = document.getElementById("leaveFrom").value;
+  const to = document.getElementById("leaveTo").value;
+  const reason = document.getElementById("leaveReason").value.trim();
+  const type = document.getElementById("leaveType").value;
+  const contactPref = document.getElementById("leaveContactPref").value;
+  const contactNum = document.getElementById("leaveContactNum").value.trim();
+  
+  if(!name || !from || !to || !contactNum){ 
+    console.error("Please fill all required fields, including contact number."); 
+    return; 
+  }
+
+  const arr = loadLeaves();
+  const req = { 
+    id: Date.now(), 
+    name, from, to, reason, type, 
+    contactPref, contactNum,
+    status:"pending", 
+    createdAt: new Date().toISOString() // This is the submission timestamp
+  };
+  arr.push(req); 
+  saveLeaves(arr);
+  
+  console.log("Leave request submitted");
+  this.reset(); 
+  renderLeaves();
+});
+
+/**
+ * Renders ALL leave requests and shows their status.
+ */
+function renderLeaves(){
+  const tbody = document.getElementById("leaveTbody");
+  tbody.innerHTML = "";
+  // Sort by 'createdAt' to show newest first
+  const allLeaves = loadLeaves().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  allLeaves.forEach(r => {
+    const tr = document.createElement("tr");
+    
+    let statusHtml = '';
+    let actionsHtml = '';
+
+    if (r.status === 'pending') {
+      statusHtml = '<span class="status-pending">Pending</span>';
+      actionsHtml = `
+        <button class="btn-approve" onclick="decide(${r.id},'approved')">Approve</button>
+        <button class="btn-reject" onclick="decide(${r.id},'rejected')" style="margin-left:8px">Reject</button>
+      `;
+    } else if (r.status === 'approved') {
+      statusHtml = '<span class="status-approved">Approved</span>';
+      actionsHtml = '<span>-</span>';
+    } else { // 'rejected'
+      statusHtml = '<span class="status-rejected">Rejected</span>';
+      actionsHtml = '<span>-</span>';
+    }
+
+    const viewButtonHtml = `
+      <button class="btn-view" onclick="viewApplication(${r.id})">View/PDF</button>
+    `;
+
+    tr.innerHTML = `
+      <td>${r.name}</td>
+      <td>${r.from}</td>
+      <td>${r.to}</td>
+      <td>${r.type}</td>
+      <td>${statusHtml}</td>
+      <td>${actionsHtml}</td>
+      <td>${viewButtonHtml}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function decide(id, result){
+  const arr = loadLeaves();
+  const req = arr.find(x => x.id == id);
+  if(req) {
+    req.status = result;
+    saveLeaves(arr);
+    renderLeaves(); 
+  }
+}
+
+// ===================================
+// === VIEW/PDF FUNCTIONS (UPDATED) ===
+// ===================================
+
+/**
+ * [UPDATED] Opens the modal and populates it with leave details.
+ */
+function viewApplication(id) {
+  const leave = loadLeaves().find(r => r.id == id);
+  if (!leave) return;
+
+  document.getElementById('modalTitle').textContent = `Leave Application: ${leave.name}`;
+  document.getElementById('modalName').textContent = leave.name;
+  document.getElementById('modalDates').textContent = `${leave.from} to ${leave.to}`;
+  document.getElementById('modalType').textContent = leave.type;
+  document.getElementById('modalContact').textContent = `${leave.contactPref || ''} ${leave.contactNum || ''}`;
+  // NEW: Populate submitted at time, using the formatter
+  document.getElementById('modalSubmittedAt').textContent = formatDateTime(leave.createdAt);
+  document.getElementById('modalReason').textContent = leave.reason || '(No reason provided)';
+  
+  document.getElementById('modalPdfBtn').onclick = () => generateLeavePDF(id);
+  document.getElementById('leaveModal').style.display = 'flex';
+}
+
+function closeLeaveModal() {
+  document.getElementById('leaveModal').style.display = 'none';
+}
+
+/**
+ * [UPDATED] Generates and downloads a PDF of the leave application.
+ */
+function generateLeavePDF(id) {
+  const leave = loadLeaves().find(r => r.id == id);
+  if (!leave) return;
+
+  if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+      console.error("jsPDF library is not loaded.");
+      return;
+  }
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const margin = 20;
+  const pageHeight = doc.internal.pageSize.height;
+  let y = 20; 
+
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Hostel Leave Application", doc.internal.pageSize.width / 2, y, { align: "center" });
+  y += 20;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  
+  doc.text(`Student Name:`, margin, y);
+  doc.text(leave.name, 70, y);
+  y += 10;
+  
+  doc.text(`Contact:`, margin, y);
+  doc.text(`${leave.contactPref || ''} ${leave.contactNum || ''}`, 70, y);
+  y += 10;
+  
+  doc.text(`Leave Type:`, margin, y);
+  doc.text(leave.type, 70, y);
+  y += 10;
+
+  doc.text(`From Date:`, margin, y);
+  doc.text(leave.from, 70, y);
+  y += 10;
+
+  doc.text(`To Date:`, margin, y);
+  doc.text(leave.to, 70, y);
+  y += 10;
+
+  // NEW: Add submission time to PDF
+  doc.text(`Submitted:`, margin, y);
+  doc.text(formatDateTime(leave.createdAt), 70, y);
+  y += 20;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Reason for Leave:", margin, y);
+  y += 10;
+
+  doc.setFont("helvetica", "normal");
+  const reasonText = leave.reason || '(No reason provided)';
+  const lines = doc.splitTextToSize(reasonText, doc.internal.pageSize.width - margin * 2);
+  doc.text(lines, margin, y);
+  y += (lines.length * 7) + 20;
+
+  if (y > pageHeight - 40) { 
+      doc.addPage();
+      y = 20;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.text(`Application Status:`, margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(leave.status.charAt(0).toUpperCase() + leave.status.slice(1), 70, y);
+
+  const safeName = leave.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  doc.save(`Leave_Application_${safeName}.pdf`);
+}
+
+
+// Initial render on page load
+renderLeaves();
+</script>
+</body>
+</html>

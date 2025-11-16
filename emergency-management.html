@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale-1"/>
+  <title>Emergency Contacts</title>
+  <style>
+    body{font-family:Poppins, sans-serif;margin:0;background:#f6f8fb;color:#0d1b3d}
+    .wrap{max-width:1400px; margin:30px auto;padding:20px}
+    .card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
+    
+    input, textarea, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #d6ddea;
+      width: 100%;
+      box-sizing: border-box; 
+    }
+    input + input, input + textarea {
+      margin-top: 8px; 
+    }
+    textarea {
+      font-family: Poppins, sans-serif;
+      min-height: 80px;
+    }
+
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eef2f6;text-align:left; font-size: 14px;}
+    
+    button{border:none;color:white;cursor:pointer; font-size: 13px; margin-top: 4px; margin-right: 4px;}
+    .btn-save { background: #2f6fed; }
+    .btn-edit { background: #ffc107; }
+    .btn-warn { background: #f59e0b; }
+    .btn-remove { background: #ef4444; }
+    .btn-submit-warn { background: #dc3545; }
+    .btn-view { background: #007bff; } /* NEW */
+
+    /* --- Modal Styles --- */
+    .modal-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px; /* Added for small screens */
+    }
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 550px; /* Made View modal wider */
+      position: relative;
+      max-height: 90vh; /* Added max-height */
+      overflow-y: auto; /* Allow modal to scroll */
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: 300;
+      color: #888;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #000; }
+    .modal-content h3 { margin-top: 0; margin-bottom: 15px; }
+
+    /* --- NEW: Styles for View Details Modal --- */
+    .details-section {
+      margin-bottom: 15px;
+    }
+    .details-section h4 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px 15px;
+      font-size: 14px;
+    }
+    .details-grid span {
+      color: #555;
+    }
+    .details-grid strong {
+      color: #111;
+    }
+    .warning-history {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fdfdfd;
+    }
+    .warning-item {
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .warning-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .warning-item p {
+      margin: 0;
+      font-size: 14px;
+    }
+    .warning-item span {
+      font-size: 12px;
+      color: #777;
+    }
+    
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Emergency Contact Management</h2>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:18px">
+    <div class="card">
+      <h3>Add / Edit Contact</h3>
+      <form id="contactForm">
+        <input id="c_id" type="hidden"> 
+        <input id="c_name" placeholder="Full Name" required>
+        <input id="c_student_phone" placeholder="Student's Phone Number" style="margin-top:8px" required>
+        <input id="c_parent_phone" placeholder="Parent's Phone Number" style="margin-top:8px" required>
+        <input id="c_email" placeholder="Email" style="margin-top:8px">
+        <input id="c_room" placeholder="Room No." style="margin-top:8px">
+        <button class="btn-save" type="submit" style="margin-top:10px">Save Contact</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>All Residents</h3>
+      <p style="font-size: 13px; color: #555; margin-top: -10px; margin-bottom: 10px;">
+        This list automatically syncs with new approved users.
+      </p>
+      <table>
+        <!-- UPDATED TABLE HEADERS -->
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Student's Phone</th>
+            <th>Parent's Phone</th>
+            <th>Room</th>
+            <th>Actions</th>
+            <th>View</th> <!-- NEW -->
+          </tr>
+        </thead>
+        <tbody id="contactsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for submitting a warning -->
+<div id="warnModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeWarnModal()">×</span>
+    <h3 id="warnModalTitle">Issue Warning / Complaint</h3>
+    <form id="warnForm">
+      <input id="warnUserId" type="hidden">
+      <label for="warnReason" style="font-weight: 500;">Reason for Warning/Complaint:</label>
+      <textarea id="warnReason" placeholder="Enter reason... (optional)" style="margin-top: 8px;"></textarea>
+      <button id="submitWarnBtn" class="btn-submit-warn" type="submit" style="margin-top: 10px;">Submit Warning</button>
+    </form>
+  </div>
+</div>
+
+<!-- 
+  NEW: Modal for Viewing Student Details
+-->
+<div id="viewModal" class="modal-popup">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeViewModal()">×</span>
+    <h3 id="viewModalTitle">Student Profile</h3>
+    
+    <!-- Contact Details -->
+    <div class="details-section">
+      <h4>Contact Information</h4>
+      <div class="details-grid">
+        <div>
+          <span>Student Phone:</span>
+          <strong id="viewStudentPhone">...</strong>
+        </div>
+        <div>
+          <span>Parent Phone:</span>
+          <strong id="viewParentPhone">...</strong>
+        </div>
+        <div>
+          <span>Email:</span>
+          <strong id="viewEmail">...</strong>
+        </div>
+        <div>
+          <span>Room No:</span>
+          <strong id="viewRoom">...</strong>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Warning History -->
+    <div class="details-section">
+      <h4>Warning History</h4>
+      <div class="warning-history" id="viewWarningHistory">
+        <!-- Warnings will be loaded here -->
+        <p>No warnings on record.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// --- ALL LOCALSTORAGE KEYS ---
+const CONTACTS_KEY = "eHostel_contacts_v1";
+const USERS_KEY = "eHostel_users_v1"; 
+const NOTIFICATIONS_KEY = "eHostel_notifications_v1";
+const WARNINGS_KEY = "eHostel_warnings_v1"; // NEW: Permanent warning log
+
+// --- LOAD/SAVE FUNCTIONS ---
+function loadContacts(){ return JSON.parse(localStorage.getItem(CONTACTS_KEY) || "[]"); }
+function saveContacts(a){ localStorage.setItem(CONTACTS_KEY, JSON.stringify(a)); }
+function loadUsers(){ return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
+function loadNotifications(){ return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]"); }
+function saveNotifications(n){ localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(n)); }
+function loadWarnings(){ return JSON.parse(localStorage.getItem(WARNINGS_KEY) || "[]"); } // NEW
+function saveWarnings(w){ localStorage.setItem(WARNINGS_KEY, JSON.stringify(w)); } // NEW
+
+// --- NEW HELPER ---
+function formatDateTime(isoString) {
+    if (!isoString) return 'N/A';
+    const date = new Date(isoString);
+    const options = { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' };
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
+}
+
+/**
+ * Syncs the approved users from user-management with the contacts list.
+ */
+function syncUsersToContacts() {
+  const allUsers = loadUsers();
+  const approvedUsers = allUsers.filter(u => u.status === 'approved');
+  let contacts = loadContacts();
+  let newContactsAdded = false;
+
+  approvedUsers.forEach(user => {
+    const userExists = contacts.some(c => c.id == user.id);
+    
+    if (!userExists) {
+      contacts.push({
+        id: user.id,
+        name: user.name,
+        studentPhone: user.studentPhone || '', 
+        parentPhone: user.parentPhone || '', 
+        email: user.email,
+        room: user.room || ''
+      });
+      newContactsAdded = true;
+    }
+  });
+
+  if (newContactsAdded) {
+    saveContacts(contacts);
+  }
+}
+
+/**
+ * [UPDATED] Renders the contacts table
+ */
+function renderContacts(){
+  const tbody = document.getElementById("contactsTbody");
+  tbody.innerHTML = "";
+  loadContacts().forEach(c => {
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.name}</td>
+      <td>${c.studentPhone || 'N/A'}</td>
+      <td>${c.parentPhone || 'N/A'}</td>
+      <td>${c.room}</td>
+      <td>
+        <button class="btn-edit" onclick="editContact(${c.id})">Edit</button>
+        <button class="btn-warn" onclick="openWarnModal(${c.id})">Warn</button>
+        <button class="btn-remove" onclick="removeContact(${c.id})">Remove</button>
+      </td>
+      <td>
+        <!-- NEW VIEW BUTTON -->
+        <button class="btn-view" onclick="viewDetails(${c.id})">View</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * Handles saving BOTH new and edited contacts
+ */
+document.getElementById("contactForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  
+  const contactId = document.getElementById("c_id").value;
+  const name = document.getElementById("c_name").value.trim();
+  const studentPhone = document.getElementById("c_student_phone").value.trim();
+  const parentPhone = document.getElementById("c_parent_phone").value.trim();
+  const email = document.getElementById("c_email").value.trim();
+  const room = document.getElementById("c_room").value.trim();
+  
+  if(!name || !parentPhone || !studentPhone){ 
+    console.error("Name and both Phone Numbers are required.");
+    return; 
+  }
+
+  const arr = loadContacts();
+  
+  if (contactId) {
+    // Editing
+    const existing = arr.find(x => x.id == contactId);
+    if (existing) {
+      existing.name = name;
+      existing.studentPhone = studentPhone;
+      existing.parentPhone = parentPhone;
+      existing.email = email;
+      existing.room = room;
+    }
+  } else {
+    // Adding
+    arr.push({ 
+      id: Date.now(), 
+      name, 
+      studentPhone,
+      parentPhone, 
+      email, 
+      room
+    });
+  }
+  
+  saveContacts(arr);
+  this.reset();
+  document.getElementById("c_id").value = ''; 
+  renderContacts();
+});
+
+/**
+ * Pre-fills the form for editing
+ */
+function editContact(id){
+  const arr = loadContacts();
+  const c = arr.find(x => x.id == id);
+  if(!c) return;
+  
+  document.getElementById("c_id").value = c.id; 
+  document.getElementById("c_name").value = c.name;
+  document.getElementById("c_student_phone").value = c.studentPhone || '';
+  document.getElementById("c_parent_phone").value = c.parentPhone || '';
+  document.getElementById("c_email").value = c.email;
+  document.getElementById("c_room").value = c.room;
+}
+
+/**
+ * Removes contact from this list only.
+ */
+function removeContact(id){
+  const arr = loadContacts().filter(x => x.id != id);
+  saveContacts(arr); 
+  renderContacts();
+}
+
+// ===================================
+// === WARNING MODAL FUNCTIONS ===
+// ===================================
+
+function openWarnModal(id) {
+  const contact = loadContacts().find(c => c.id == id);
+  if (!contact) return;
+  
+  document.getElementById("warnModalTitle").textContent = `Issue Warning to ${contact.name}`;
+  document.getElementById("warnUserId").value = contact.id;
+  document.getElementById("warnReason").value = ''; 
+  document.getElementById("warnModal").style.display = 'flex';
+}
+
+function closeWarnModal() {
+  document.getElementById("warnModal").style.display = 'none';
+}
+
+// [UPDATED] Handle the warning form submission
+document.getElementById("warnForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  
+  const userId = document.getElementById("warnUserId").value;
+  const reason = document.getElementById("warnReason").value.trim();
+  const contact = loadContacts().find(c => c.id == userId);
+
+  if (!contact) {
+    console.error("No contact specified.");
+    return;
+  }
+  
+  const finalReason = reason || "No reason specified.";
+  const timestamp = new Date().toISOString();
+  
+  // 1. Log to console
+  console.log(`Warning issued to ${contact.name} (Room: ${contact.room}). Reason: ${finalReason}`);
+
+  // 2. Create a PERMANENT log of the warning
+  const allWarnings = loadWarnings();
+  allWarnings.push({
+    id: Date.now(),
+    userId: contact.id, // Link to the user
+    reason: finalReason,
+    timestamp: timestamp
+  });
+  saveWarnings(allWarnings);
+
+  // 3. Create a TEMPORARY notification for the bell icon
+  const notifs = loadNotifications();
+  notifs.unshift({
+    id: Date.now(),
+    type: "Warning", 
+    message: `Warning issued to <strong>${contact.name}</strong> (Room: ${contact.room}). Reason: ${finalReason}`,
+    timestamp: timestamp
+  });
+  saveNotifications(notifs);
+
+  // 4. Close the modal
+  closeWarnModal();
+});
+
+// ===================================
+// === NEW VIEW DETAILS FUNCTIONS ===
+// ===================================
+
+function viewDetails(id) {
+  const contact = loadContacts().find(c => c.id == id);
+  if (!contact) return;
+
+  // 1. Populate contact info
+  document.getElementById("viewModalTitle").textContent = `Student Profile: ${contact.name}`;
+  document.getElementById("viewStudentPhone").textContent = contact.studentPhone || 'N/A';
+  document.getElementById("viewParentPhone").textContent = contact.parentPhone || 'N/A';
+  document.getElementById("viewEmail").textContent = contact.email || 'N/A';
+  document.getElementById("viewRoom").textContent = contact.room || 'N/A';
+
+  // 2. Load and filter warnings for this user
+  const allWarnings = loadWarnings();
+  const userWarnings = allWarnings
+    .filter(w => w.userId == id)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Newest first
+
+  // 3. Populate warning history
+  const historyContainer = document.getElementById("viewWarningHistory");
+  historyContainer.innerHTML = ''; // Clear previous content
+
+  if (userWarnings.length === 0) {
+    historyContainer.innerHTML = '<p>No warnings on record.</p>';
+  } else {
+    userWarnings.forEach(warn => {
+      const item = document.createElement('div');
+      item.className = 'warning-item';
+      item.innerHTML = `
+        <p>${warn.reason}</p>
+        <span>${formatDateTime(warn.timestamp)}</span>
+      `;
+      historyContainer.appendChild(item);
+    });
+  }
+
+  // 4. Show the modal
+  document.getElementById("viewModal").style.display = 'flex';
+}
+
+function closeViewModal() {
+  document.getElementById("viewModal").style.display = 'none';
+}
+
+
+// --- INITIAL PAGE LOAD ---
+syncUsersToContacts(); // First, sync new users
+renderContacts();      // Then, render the full list
+</script>
+</body>
+</html>

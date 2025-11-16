@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hostel Management System - Auth</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- NEW: Added styles for the login choice buttons -->
+  <style>
+    .btn-choice {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 15px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      background: #f8f9fa;
+      color: #333;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .btn-choice:hover {
+      border-color: #2f6fed;
+      background: #f1f5ff;
+      color: #2f6fed;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    /* Back link style */
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #555;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sign Up Page (Active by default) -->
+  <div class="container page active" id="signupPage">
+    <h1>Sign up</h1>
+
+    <form id="signupForm">
+      <div class="input-group">
+        <label>Name</label>
+        <input type="text" id="signupName" placeholder="Enter your name" required />
+      </div>
+
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="signupEmail" placeholder="Enter your email" required />
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="signupPassword" placeholder="Enter your password" required />
+      </div>
+
+      <button type="submit" class="btn-primary">Sign Up</button>
+    </form>
+
+    <div class="text-center">
+      Already have an account? <a id="goToLogin">Log In</a>
+    </div>
+
+    <div class="divider"><span>or</span></div>
+
+    <button class="btn-google" id="signupGoogleBtn">
+      <img src="https://www.svgrepo.com/show/355037/google.svg" width="20" alt="google" />
+      Sign up with Google
+    </button>
+  </div>
+
+  <!-- NEW: Login Choice Page -->
+  <div class="container page" id="loginChoicePage">
+    <h2 style="text-align: center;">Log In As...</h2>
+    
+    <button class="btn-choice" id="goToAdminLogin">Login as Admin</button>
+    <button class="btn-choice" id="goToStudentLogin">Login as Student</button>
+
+    <div class="text-center">
+      <a class="back-link" id="goToSignupFromChoice">&larr; Back to Sign Up</a>
+    </div>
+  </div>
+
+  <!-- UPDATED: Admin Login Page (Was #loginPage) -->
+  <div class="container page" id="adminLoginPage">
+    <h2 style="text-align: center;">Admin Login</h2>
+
+    <form id="adminLoginForm">
+      <div class="input-group">
+        <label>Email address</label>
+        <input type="email" id="adminLoginEmail" placeholder="Enter your admin email" required />
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="adminLoginPassword" placeholder="Enter your password" required />
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="adminRememberMe" />
+          <span>Remember for 30 days</span>
+        </label>
+        <a href="#">Forgot password</a>
+      </div>
+
+      <button type="submit" class="btn-primary">Login</button>
+    </form>
+
+    <button class="btn-google" id="adminLoginGoogleBtn">
+      <img src="https://www.svgrepo.com/show/355037/google.svg" width="20" alt="google" />
+      Sign in with Google
+    </button>
+
+    <div class="text-center">
+      Don't have an account? <a id="goToSignupFromAdmin">Sign up</a>
+    </div>
+  </div>
+
+  <!-- NEW: Student Login Page -->
+  <div class="container page" id="studentLoginPage">
+    <h2 style="text-align: center;">Student Login</h2>
+
+    <form id="studentLoginForm">
+      <div class="input-group">
+        <label>Email address</label>
+        <input type="email" id="studentLoginEmail" placeholder="Enter your student email" required />
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="studentLoginPassword" placeholder="Enter your password" required />
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="studentRememberMe" />
+          <span>Remember for 30 days</span>
+        </label>
+        <a href="#">Forgot password</a>
+      </div>
+
+      <button type="submit" class="btn-primary">Login</button>
+    </form>
+
+    <button class="btn-google" id="studentLoginGoogleBtn">
+      <img src="https://www.svgrepo.com/show/355037/google.svg" width="20" alt="google" />
+      Sign in with Google
+    </button>
+
+    <div class="text-center">
+      Don't have an account? <a id="goToSignupFromStudent">Sign up</a>
+    </div>
+  </div>
+
+
+  <!-- Google Modal (unchanged) -->
+  <div class="modal" id="googleModal">
+    <div class="modal-content">
+      <h3>Choose an account</h3>
+      <div class="google-account" onclick="selectGoogleAccount('john.doe@gmail.com')">
+        <strong>John Doe</strong><br />john.doe@gmail.com
+      </div>
+      <div class="google-account" onclick="selectGoogleAccount('sarah.smith@gmail.com')">
+        <strong>Sarah Smith</strong><br />sarah.smith@gmail.com
+      </div>
+      <div class="google-account" onclick="selectGoogleAccount('mike.johnson@gmail.com')">
+        <strong>Mike Johnson</strong><br />mike.johnson@gmail.com
+      </div>
+      <button class="close-modal" onclick="closeGoogleModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- UPDATED SCRIPT -->
+  <script>
+    // page switch function
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    // --- Page Navigation ---
+    document.getElementById('goToLogin').addEventListener('click', () => showPage('loginChoicePage'));
+    document.getElementById('goToAdminLogin').addEventListener('click', () => showPage('adminLoginPage'));
+    document.getElementById('goToStudentLogin').addEventListener('click', () => showPage('studentLoginPage'));
+    
+    // "Sign up" links from all pages
+    document.getElementById('goToSignupFromChoice').addEventListener('click', () => showPage('signupPage'));
+    document.getElementById('goToSignupFromAdmin').addEventListener('click', () => showPage('signupPage'));
+    document.getElementById('goToSignupFromStudent').addEventListener('click', () => showPage('signupPage'));
+
+    
+    // --- Form Submission Handlers ---
+    
+    // Shared login function (demo)
+    function handleLogin(email) {
+      localStorage.setItem('loggedIn', 'true');
+      const userName = email.split('@')[0];
+      localStorage.setItem('userName', userName);
+      window.location.href = 'index1.html';
+    }
+
+    // Sign Up form
+    document.getElementById('signupForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      if (!name || !email) return; 
+      
+      localStorage.setItem('loggedIn', 'true');
+      localStorage.setItem('userName', name);
+      window.location.href = 'index1.html';
+    });
+
+    // Admin Login form
+    document.getElementById('adminLoginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('adminLoginEmail').value.trim();
+      if (!email) return;
+      handleLogin(email);
+    });
+
+    // Student Login form
+    document.getElementById('studentLoginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('studentLoginEmail').value.trim();
+      if (!email) return;
+      handleLogin(email);
+    });
+
+    // --- Google Modal Handlers (Demo Behavior) ---
+    document.getElementById('signupGoogleBtn').addEventListener('click', () => openGoogleModal());
+    document.getElementById('adminLoginGoogleBtn').addEventListener('click', () => openGoogleModal());
+    document.getElementById('studentLoginGoogleBtn').addEventListener('click', () => openGoogleModal());
+
+    function openGoogleModal() {
+      document.getElementById('googleModal').classList.add('active');
+    }
+    function closeGoogleModal() {
+      document.getElementById('googleModal').classList.remove('active');
+    }
+    function selectGoogleAccount(email) {
+      handleLogin(email);
+      closeGoogleModal();
+    }
+    document.getElementById('googleModal').addEventListener('click', function (e) {
+      if (e.target === this) closeGoogleModal();
+    });
+  </script>
+</body>
+</html>

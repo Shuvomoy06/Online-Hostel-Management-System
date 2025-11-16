@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Features — eHostel</title>
+<style>
+  :root{--accent:#2f6fed;--card:#fff;--bg:#f4f6fb}
+  *{box-sizing:border-box}
+  body{font-family: "Poppins", sans-serif; margin:0; background:var(--bg); color:#0d1b3d}
+  header{background:#fff;padding:18px 28px;display:flex;align-items:center;gap:20px;box-shadow:0 3px 8px rgba(0,0,0,0.06)}
+  .logo{font-weight:700;font-size:20px}
+  .container{max-width:1200px;margin:40px auto;padding:0 20px}
+  h1{margin:16px 0 28px;font-size:28px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+  .card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease}
+  .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(16,24,40,0.12)}
+  .card h3{margin:0 0 8px;font-size:18px}
+  .card p{margin:0;color:#465466}
+  .card .badge{display:inline-block;margin-top:12px;padding:6px 10px;border-radius:999px;background:#eef4ff;color:var(--accent);font-weight:600;font-size:13px}
+  footer{margin:40px 0;text-align:center;color:#7a8594}
+  /* small utility */
+  .center{display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">eHostel</div>
+  <nav style="margin-left:auto">
+    <a href="index1.html" style="text-decoration:none;color:var(--accent);font-weight:600">Home</a>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>Features — Admin Console</h1>
+
+  <div class="grid">
+    <div class="card" onclick="location.href='user-management.html'">
+      <h3>1 • User registration & Authentication</h3>
+      <p>Register new users, view pending registrations, validate accounts and view members.</p>
+      <div class="badge">Manage users</div>
+    </div>
+
+    <div class="card" onclick="location.href='fee-management.html'">
+      <h3>2 • Hostel Fee Management</h3>
+      <p>Track who has paid, who hasn't. Mark payments and send reminders.</p>
+      <div class="badge">Fees & Reminders</div>
+    </div>
+
+    <div class="card" onclick="location.href='leave-management.html'">
+      <h3>3 • Hostel Leave Management</h3>
+      <p>Approve/reject leave requests or emergency permanent-leave requests.</p>
+      <div class="badge">Leaves</div>
+    </div>
+
+    <div class="card" onclick="location.href='emergency-management.html'">
+      <h3>4 • Emergency Contact Management</h3>
+      <p>View and edit contact details, room assignments and issue warnings.</p>
+      <div class="badge">Contacts</div>
+    </div>
+
+    <div class="card" onclick="location.href='ai-allocation.html'">
+      <h3>5 • AI-based Smart Room Allocation</h3>
+      <p>Enter preferences and run allocation to get room recommendations and assignments.</p>
+      <div class="badge">Smart Allocation</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  © 2025 eHostel Management System
+</footer>
+
+</body>
+</html>
